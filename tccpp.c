@@ -20,6 +20,11 @@
 
 #include "tcc.h"
 
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcast-align"
+#endif
+
 /********************************************************/
 /* global variables */
 
@@ -383,12 +388,14 @@ static int tcc_peekc_slow(BufferedFile *bf)
 
 /* return the current character, handling end of block if necessary
    (but not stray) */
+ST_FUNC int handle_eob(void);
 ST_FUNC int handle_eob(void)
 {
     return tcc_peekc_slow(file);
 }
 
 /* read next char from current input file and handle end of input buffer */
+ST_INLN void inp(void);
 ST_INLN void inp(void)
 {
     ch = *(++(file->buf_ptr));
@@ -474,6 +481,7 @@ static int handle_stray1(uint8_t *p)
 /* input with '\[\r]\n' handling. Note that this function cannot
    handle other characters after '\', so you cannot call it inside
    strings or comments */
+ST_FUNC void minp(void);
 ST_FUNC void minp(void)
 {
     inp();
@@ -520,6 +528,7 @@ static uint8_t *parse_line_comment(uint8_t *p)
 }
 
 /* C comments */
+ST_FUNC uint8_t *parse_comment(uint8_t *p);
 ST_FUNC uint8_t *parse_comment(uint8_t *p)
 {
     int c;
@@ -2188,7 +2197,6 @@ maybe_newline:
                 goto parse_ident_slow;
             }
         }
-        break;
     case '0': case '1': case '2': case '3':
     case '4': case '5': case '6': case '7':
     case '8': case '9':
@@ -3054,3 +3062,7 @@ print_line:
     free_defines(define_start);
     return 0;
 }
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif

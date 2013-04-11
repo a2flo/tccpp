@@ -106,14 +106,13 @@ ST_FUNC void test_lvalue(void)
 static Sym *__sym_malloc(void)
 {
     Sym *sym_pool, *sym, *last_sym;
-    int i;
 
     sym_pool = tcc_malloc(SYM_POOL_NB * sizeof(Sym));
     dynarray_add(&sym_pools, &nb_sym_pools, sym_pool);
 
     last_sym = sym_free_first;
     sym = sym_pool;
-    for(i = 0; i < SYM_POOL_NB; i++) {
+    for(unsigned long i = 0; i < SYM_POOL_NB; i++) {
         sym->next = last_sym;
         last_sym = sym;
         sym++;
@@ -319,8 +318,6 @@ static void vpushs(long long v)
   CValue cval;
   if (PTR_SIZE == 4)
     cval.i = (int)v;
-  else
-    cval.ull = v;
   vsetc(&size_type, VT_CONST, &cval);
 }
 
@@ -346,14 +343,6 @@ static void vpush_ref(CType *type, Section *sec, unsigned long offset, unsigned 
 {
     CValue cval;
 
-    cval.ul = 0;
-    vsetc(type, VT_CONST | VT_SYM, &cval);
-}
-
-/* push a reference to global symbol v */
-ST_FUNC void vpush_global_sym(CType *type, int v)
-{
-    CValue cval;
     cval.ul = 0;
     vsetc(type, VT_CONST | VT_SYM, &cval);
 }

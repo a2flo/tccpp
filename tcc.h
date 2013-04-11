@@ -1061,7 +1061,6 @@ ST_FUNC void swap(int *p, int *q);
 ST_FUNC void vpushi(int v);
 ST_FUNC void vset(CType *type, int r, int v);
 ST_FUNC void vswap(void);
-ST_FUNC void vpush_global_sym(CType *type, int v);
 ST_FUNC void vrote(SValue *e, int n);
 ST_FUNC void vrott(int n);
 ST_FUNC void vrotb(int n);
@@ -1080,6 +1079,8 @@ ST_FUNC void expr_sum(void);
 ST_FUNC void gexpr(void);
 ST_FUNC int expr_const(void);
 ST_FUNC void decl(int l);
+ST_FUNC void vpush(CType *type);
+ST_FUNC void vpush64(int ty, unsigned long long v);
 
 /********************************************************/
 #undef ST_DATA

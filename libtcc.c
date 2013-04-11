@@ -151,10 +151,6 @@ PUB_FUNC void tcc_memstats(void)
 #endif
 }
 
-#define free(p) use_tcc_free(p)
-#define malloc(s) use_tcc_malloc(s)
-#define realloc(p, s) use_tcc_realloc(p, s)
-
 /********************************************************/
 /* dynarrays */
 
@@ -285,7 +281,7 @@ PUB_FUNC void tcc_error_noabort(const char *fmt, ...)
     va_end(ap);
 }
 
-PUB_FUNC void tcc_error(const char *fmt, ...)
+PUB_FUNC void __attribute__((noreturn)) tcc_error(const char *fmt, ...)
 {
     TCCState *s1 = tcc_state;
     va_list ap;
@@ -644,23 +640,6 @@ LIBTCCAPI void tcc_set_lib_path(TCCState *s, const char *path)
     tcc_free(s->tcc_lib_path);
     s->tcc_lib_path = tcc_strdup(path);
 }
-
-#define WD_ALL    0x0001 /* warning is activated when using -Wall */
-#define FD_INVERT 0x0002 /* invert value before storing */
-
-typedef struct FlagDef {
-    uint16_t offset;
-    uint16_t flags;
-    const char *name;
-} FlagDef;
-
-static const FlagDef warning_defs[] = {
-    { offsetof(TCCState, warn_unsupported), 0, "unsupported" },
-    { offsetof(TCCState, warn_write_strings), 0, "write-strings" },
-    { offsetof(TCCState, warn_error), 0, "error" },
-    { offsetof(TCCState, warn_implicit_function_declaration), WD_ALL,
-      "implicit-function-declaration" },
-};
 
 static int strstart(const char *val, const char **str)
 {
