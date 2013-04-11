@@ -21,8 +21,7 @@
 #ifndef _TCC_H
 #define _TCC_H
 
-#define _GNU_SOURCE
-#define TCC_VERSION "0.9.26"
+#define TCC_VERSION "0.9.26-cl-preprocessor"
 
 #ifdef CONFIG_TCCBOOT
 #include "tccboot.h"
@@ -622,15 +621,9 @@ static inline int toup(int c)
 # define PUB_FUNC
 #endif
 
-#ifdef ONE_SOURCE
-#define ST_INLN static inline
-#define ST_FUNC static
-#define ST_DATA static
-#else
 #define ST_INLN
 #define ST_FUNC
-#define ST_DATA extern
-#endif
+#define ST_DATA
 
 /* ------------ libtcc.c ------------ */
 
@@ -795,12 +788,5 @@ ST_FUNC void decl(int l);
 ST_FUNC void vpush(CType *type);
 ST_FUNC void vpush64(int ty, unsigned long long v);
 
-/********************************************************/
-#undef ST_DATA
-#ifdef ONE_SOURCE
-#define ST_DATA static
-#else
-#define ST_DATA
-#endif
 /********************************************************/
 #endif /* _TCC_H */

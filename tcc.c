@@ -18,11 +18,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifdef ONE_SOURCE
-#include "libtcc.c"
-#else
+#if !defined(TCC_LIB_ONLY)
+
 #include "tcc.h"
-#endif
 
 static void help(void)
 {
@@ -90,3 +88,5 @@ int main(int argc, char **argv)
     tcc_delete(s);
     return ret;
 }
+
+#endif
