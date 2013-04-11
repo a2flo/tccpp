@@ -78,36 +78,11 @@
 # define O_BINARY 0
 #endif
 
-// TODO: remove this
-//#include "elf.h"
 typedef unsigned char           uint8_t;
 typedef unsigned short int      uint16_t;
 typedef unsigned int            uint32_t;
 typedef unsigned long long int  uint64_t;
 
-#ifdef TCC_TARGET_X86_64
-# define ELFCLASSW ELFCLASS64
-# define ElfW(type) Elf##64##_##type
-# define ELFW(type) ELF##64##_##type
-# define ElfW_Rel ElfW(Rela)
-# define SHT_RELX SHT_RELA
-# define REL_SECTION_FMT ".rela%s"
-/* XXX: DLL with PLT would only work with x86-64 for now */
-# define TCC_OUTPUT_DLL_WITH_PLT
-#else
-# define ELFCLASSW ELFCLASS32
-# define ElfW(type) Elf##32##_##type
-# define ELFW(type) ELF##32##_##type
-# define ElfW_Rel ElfW(Rel)
-# define SHT_RELX SHT_REL
-# define REL_SECTION_FMT ".rel%s"
-#endif
-
-/* target address type */
-#define addr_t ElfW(Addr)
-
-// TODO: remove this
-//#include "stab.h"
 #include "libtcc.h"
 
 /* parser debug */
@@ -235,33 +210,10 @@ typedef unsigned long long int  uint64_t;
 /* -------------------------------------------- */
 /* include the target specific definitions */
 
-// TODO: remove this
-#define NB_REGS         4
-#define NB_ASM_REGS     8
-#define RC_INT     0x0001 /* generic integer register */
-#define RC_FLOAT   0x0002 /* generic float register */
-#define RC_EAX     0x0004
-#define RC_ST0     0x0008
-#define RC_ECX     0x0010
-#define RC_EDX     0x0020
-#define RC_IRET    RC_EAX /* function return: integer register */
-#define RC_LRET    RC_EDX /* function return: second integer register */
-#define RC_FRET    RC_ST0 /* function return: float register */
-enum {
-    TREG_EAX = 0,
-    TREG_ECX,
-    TREG_EDX,
-    TREG_ST0,
-};
-#define REG_IRET TREG_EAX /* single word int return register */
-#define REG_LRET TREG_EDX /* second word return register (for long long) */
-#define REG_FRET TREG_ST0 /* float return register */
 #define PTR_SIZE 4
 #define LDOUBLE_SIZE  12
 #define LDOUBLE_ALIGN 4
 #define MAX_ALIGN     8
-#define R_DATA_PTR  R_386_32
-#define ELF_PAGE_SIZE  0x1000
 
 /* -------------------------------------------- */
 
@@ -527,13 +479,6 @@ struct sym_attr {
 struct TCCState {
 
     int verbose; /* if true, display some information during compilation */
-    int nostdinc; /* if true, no standard headers are added */
-    int nostdlib; /* if true, no standard libraries are added */
-    int nocommon; /* if true, do not use common symbols for .bss data */
-    int static_link; /* if true, static linking is performed */
-    int rdynamic; /* if true, all symbols are exported */
-    int symbolic; /* if true, resolve symbols in the current module first */
-    int alacarte_link; /* if true, only link in referenced objects from archive */
 
     char *tcc_lib_path; /* CONFIG_TCCDIR or -B option */
     char *soname; /* as specified on the command line (-soname) */
@@ -555,21 +500,8 @@ struct TCCState {
     int warn_none;
     int warn_implicit_function_declaration;
 
-    /* compile with debug symbol (and use them if error during execution) */
-    int do_debug;
-#ifdef CONFIG_TCC_BCHECK
-    /* compile with built-in memory and bounds checker */
-    int do_bounds_check;
-#endif
-
-    unsigned long section_align; /* section alignment */
-
     char *init_symbol; /* symbols to call at load-time (not used currently) */
     char *fini_symbol; /* symbols to call at unload-time (not used currently) */
-    
-#ifdef TCC_TARGET_I386
-    int seg_size; /* 32. Can be 16 with i386 assembler (.code16) */
-#endif
 
     /* array of all loaded dlls (including those referenced by loaded dlls) */
     DLLReference **loaded_dlls;
@@ -649,44 +581,10 @@ struct TCCState {
     /* tiny assembler state */
     Sym *asm_labels;
 
-#ifdef TCC_TARGET_PE
-    /* PE info */
-    int pe_subsystem;
-    unsigned pe_file_align;
-    unsigned pe_stack_size;
-# ifdef TCC_TARGET_X86_64
-    Section *uw_pdata;
-    int uw_sym;
-    unsigned uw_offs;
-# endif
-#endif
-
-#ifdef TCC_IS_NATIVE
-    /* for tcc_relocate */
-    void *runtime_mem;
-# ifdef HAVE_SELINUX
-    void *write_mem;
-    unsigned long mem_size;
-# endif
-# if !defined TCC_TARGET_PE && (defined TCC_TARGET_X86_64 || defined TCC_TARGET_ARM)
-    /* write PLT and GOT here */
-    char *runtime_plt_and_got;
-    unsigned runtime_plt_and_got_offset;
-#  define TCC_HAS_RUNTIME_PLTGOT
-# endif
-#endif
-
     /* used by main and tcc_parse_args only */
     char **files; /* files seen on command line */
     int nb_files; /* number thereof */
     int nb_libraries; /* number of libs thereof */
-    char *outfile; /* output filename */
-    char *option_m; /* only -m32/-m64 handled */
-    int print_search_dirs; /* option */
-    int option_r; /* option -r */
-    int do_bench; /* option -bench */
-    int gen_deps; /* option -MD  */
-    char *deps_outfile; /* option -MF */
 };
 
 /* The current value can be: */
@@ -1021,11 +919,6 @@ PUB_FUNC void *tcc_malloc(unsigned long size);
 PUB_FUNC void *tcc_mallocz(unsigned long size);
 PUB_FUNC void *tcc_realloc(void *ptr, unsigned long size);
 PUB_FUNC char *tcc_strdup(const char *str);
-#define free(p) use_tcc_free(p)
-#define malloc(s) use_tcc_malloc(s)
-#define realloc(p, s) use_tcc_realloc(p, s)
-#undef strdup
-#define strdup(s) use_tcc_strdup(s)
 PUB_FUNC void tcc_memstats(void);
 PUB_FUNC void tcc_error_noabort(const char *fmt, ...);
 PUB_FUNC void tcc_error(const char *fmt, ...);
@@ -1063,8 +956,6 @@ ST_FUNC int tcc_open(TCCState *s1, const char *filename);
 ST_FUNC void tcc_close(void);
 
 ST_FUNC int tcc_add_file_internal(TCCState *s1, const char *filename, int flags);
-ST_FUNC int tcc_add_crt(TCCState *s, const char *filename);
-ST_FUNC int tcc_add_dll(TCCState *s, const char *filename, int flags);
 
 PUB_FUNC void tcc_print_stats(TCCState *s, int64_t total_time);
 PUB_FUNC int tcc_parse_args(TCCState *s, int argc, char **argv);

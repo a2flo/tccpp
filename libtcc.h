@@ -54,18 +54,11 @@ LIBTCCAPI int tcc_add_file(TCCState *s, const char *filename);
 /* linking commands */
 
 /* set output type. MUST BE CALLED before any compilation */
-LIBTCCAPI int tcc_set_output_type(TCCState *s, int output_type);
 #define TCC_OUTPUT_MEMORY   0 /* output will be run in memory (default) */
 #define TCC_OUTPUT_EXE      1 /* executable file */
 #define TCC_OUTPUT_DLL      2 /* dynamic library */
 #define TCC_OUTPUT_OBJ      3 /* object file */
 #define TCC_OUTPUT_PREPROCESS 4 /* only preprocess (used internally) */
-
-/* equivalent to -Lpath option */
-LIBTCCAPI int tcc_add_library_path(TCCState *s, const char *pathname);
-
-/* the library name is the same as the argument of the '-l' option */
-LIBTCCAPI int tcc_add_library(TCCState *s, const char *libraryname);
 
 /* link and run main() function and return its value. DO NOT call
    tcc_relocate() before. */

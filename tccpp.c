@@ -1290,52 +1290,7 @@ static inline void add_cached_include(TCCState *s1, const char *filename, int if
 
 static void pragma_parse(TCCState *s1)
 {
-    int val;
-
     next();
-	// TODO: remove this -> not allowed, error!
-#if 0
-    if (tok == TOK_pack) {
-        /*
-          This may be:
-          #pragma pack(1) // set
-          #pragma pack() // reset to default
-          #pragma pack(push,1) // push & set
-          #pragma pack(pop) // restore previous
-        */
-        next();
-        skip('(');
-        if (tok == TOK_ASM_pop) {
-            next();
-            if (s1->pack_stack_ptr <= s1->pack_stack) {
-            stk_error:
-                tcc_error("out of pack stack");
-            }
-            s1->pack_stack_ptr--;
-        } else {
-            val = 0;
-            if (tok != ')') {
-                if (tok == TOK_ASM_push) {
-                    next();
-                    if (s1->pack_stack_ptr >= s1->pack_stack + PACK_STACK_SIZE - 1)
-                        goto stk_error;
-                    s1->pack_stack_ptr++;
-                    skip(',');
-                }
-                if (tok != TOK_CINT) {
-                pack_error:
-                    tcc_error("invalid pack pragma");
-                }
-                val = tokc.i;
-                if (val < 1 || val > 16 || (val & (val - 1)) != 0)
-                    goto pack_error;
-                next();
-            }
-            *s1->pack_stack_ptr = val;
-            skip(')');
-        }
-    }
-#endif
 }
 
 /* is_bof is true if first non space token at beginning of file */
@@ -1493,12 +1448,6 @@ include_trynext:
                     tcc_strdup(buf1));
             /* push current file in stack */
             ++s1->include_stack_ptr;
-            /* add include file debug info */
-			// TODO: remove this
-#if 0
-            if (s1->do_debug)
-                put_stabs(file->filename, N_BINCL, 0, 0, 0);
-#endif
             tok_flags |= TOK_FLAG_BOF | TOK_FLAG_BOL;
             ch = file->buf_ptr[0];
             goto the_end;
@@ -2132,13 +2081,6 @@ static inline void next_nomacro1(void)
                     tok_flags &= ~TOK_FLAG_ENDIF;
                 }
 
-                /* add end of include file debug info */
-				// TODO: remove this
-#if 0
-                if (tcc_state->do_debug) {
-                    put_stabd(N_EINCL, 0, 0);
-                }
-#endif
                 /* pop include stack */
                 tcc_close();
                 s1->include_stack_ptr--;

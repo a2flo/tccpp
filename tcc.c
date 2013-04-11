@@ -120,36 +120,6 @@ static void exec_other_tcc(TCCState *s, char **argv, const char *optarg)
 #define exec_other_tcc(s, argv, optarg)
 #endif
 
-static void gen_makedeps(TCCState *s, const char *target, const char *filename)
-{
-    FILE *depout;
-    char buf[1024], *ext;
-    int i;
-
-    if (!filename) {
-        /* compute filename automatically
-         * dir/file.o -> dir/file.d             */
-        pstrcpy(buf, sizeof(buf), target);
-        ext = tcc_fileextension(buf);
-        pstrcpy(ext, sizeof(buf) - (ext-buf), ".d");
-        filename = buf;
-    }
-
-    if (s->verbose)
-        printf("<- %s\n", filename);
-
-    /* XXX return err codes instead of error() ? */
-    depout = fopen(filename, "w");
-    if (!depout)
-        tcc_error("could not open '%s'", filename);
-
-    fprintf(depout, "%s : \\\n", target);
-    for (i=0; i<s->nb_target_deps; ++i)
-        fprintf(depout, " %s \\\n", s->target_deps[i]);
-    fprintf(depout, "\n");
-    fclose(depout);
-}
-
 static char *default_outputfile(TCCState *s, const char *first_file)
 {
     char buf[1024];
@@ -160,21 +130,7 @@ static char *default_outputfile(TCCState *s, const char *first_file)
         name = tcc_basename(first_file);
     pstrcpy(buf, sizeof(buf), name);
     ext = tcc_fileextension(buf);
-#ifdef TCC_TARGET_PE
-    if (s->output_type == TCC_OUTPUT_DLL)
-        strcpy(ext, ".dll");
-    else
-    if (s->output_type == TCC_OUTPUT_EXE)
-        strcpy(ext, ".exe");
-    else
-#endif
-    if (( (s->output_type == TCC_OUTPUT_OBJ && !s->option_r) ||
-          (s->output_type == TCC_OUTPUT_PREPROCESS) )
-        && *ext)
-        strcpy(ext, ".o");
-    else
-        strcpy(buf, "a.out");
-
+	strcpy(ext, ".o");
     return tcc_strdup(buf);
 }
 
@@ -244,8 +200,7 @@ static int64_t getclock_us(void)
 int main(int argc, char **argv)
 {
     TCCState *s;
-    int ret, optind, i, bench;
-    int64_t start_time = 0;
+    int ret, optind, i;
     const char *first_file = NULL;
 
     s = tcc_new();
@@ -258,73 +213,33 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    if (s->option_m)
-        exec_other_tcc(s, argv, s->option_m);
-
     if (s->verbose)
         display_info(s, 0);
-
-    if (s->print_search_dirs || (s->verbose == 2 && optind == 1)) {
-        tcc_set_output_type(s, TCC_OUTPUT_MEMORY);
-        display_info(s, 1);
-        return 0;
-    }
 
     if (s->verbose && optind == 1)
         return 0;
 
     if (s->nb_files == 0)
         tcc_error("no input files\n");
-
-    /* check -c consistency : only single file handled. XXX: checks file type */
-    if (s->output_type == TCC_OUTPUT_OBJ && !s->option_r) {
-        if (s->nb_libraries != 0)
-            tcc_error("cannot specify libraries with -c");
-        /* accepts only a single input file */
-        if (s->nb_files != 1)
-            tcc_error("cannot specify multiple files with -c");
-    }
     
     if (s->output_type == TCC_OUTPUT_PREPROCESS) {
-        if (!s->outfile) {
-            s->ppfp = stdout;
-        } else {
-            s->ppfp = fopen(s->outfile, "w");
-            if (!s->ppfp)
-                tcc_error("could not write '%s'", s->outfile);
-        }
+        s->ppfp = stdout;
     }
-
-    bench = s->do_bench;
-    if (bench)
-        start_time = getclock_us();
-
-    tcc_set_output_type(s, s->output_type);
 
     /* compile or add each files or library */
     for(i = ret = 0; i < s->nb_files && ret == 0; i++) {
         const char *filename;
 
         filename = s->files[i];
-        if (filename[0] == '-' && filename[1] == 'l') {
-            if (tcc_add_library(s, filename + 2) < 0) {
-                tcc_error_noabort("cannot find '%s'", filename);
-                ret = 1;
-            }
-        } else {
-            if (1 == s->verbose)
-                printf("-> %s\n", filename);
-            if (tcc_add_file(s, filename) < 0)
-                ret = 1;
-            if (!first_file)
-                first_file = filename;
-        }
+		if (1 == s->verbose)
+			printf("-> %s\n", filename);
+		if (tcc_add_file(s, filename) < 0)
+			ret = 1;
+		if (!first_file)
+			first_file = filename;
     }
 
     if (0 == ret) {
-        if (bench)
-            tcc_print_stats(s, getclock_us() - start_time);
-
         if (s->output_type == TCC_OUTPUT_MEMORY) {
 #ifdef TCC_IS_NATIVE
             ret = tcc_run(s, argc - 1 - optind, argv + 1 + optind);
@@ -332,20 +247,9 @@ int main(int argc, char **argv)
             tcc_error_noabort("-run is not available in a cross compiler");
             ret = 1;
 #endif
-        } else if (s->output_type == TCC_OUTPUT_PREPROCESS) {
-             if (s->outfile)
-                fclose(s->ppfp);
-        } else {
-            if (!s->outfile)
-                s->outfile = default_outputfile(s, first_file);
-            /* dump collected dependencies */
-            if (s->gen_deps && !ret)
-                gen_makedeps(s, s->outfile, s->deps_outfile);
         }
     }
 
     tcc_delete(s);
-    if (bench)
-        tcc_memstats();
     return ret;
 }
