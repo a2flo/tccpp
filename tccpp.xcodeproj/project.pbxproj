@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		5C7CB6D71717282A00C6A3D7 /* libtcc.c in Sources */ = {isa = PBXBuildFile; fileRef = 5C7CB6D31717282A00C6A3D7 /* libtcc.c */; };
-		5C7CB6D81717282A00C6A3D7 /* tcc.c in Sources */ = {isa = PBXBuildFile; fileRef = 5C7CB6D41717282A00C6A3D7 /* tcc.c */; };
 		5C7CB6D91717282A00C6A3D7 /* tccgen.c in Sources */ = {isa = PBXBuildFile; fileRef = 5C7CB6D51717282A00C6A3D7 /* tccgen.c */; };
 		5C7CB6DA1717282A00C6A3D7 /* tccpp.c in Sources */ = {isa = PBXBuildFile; fileRef = 5C7CB6D61717282A00C6A3D7 /* tccpp.c */; };
 /* End PBXBuildFile section */
@@ -19,7 +18,6 @@
 		5C7CB6D01717282A00C6A3D7 /* libtcc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = libtcc.h; sourceTree = SOURCE_ROOT; };
 		5C7CB6D11717282A00C6A3D7 /* tcc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tcc.h; sourceTree = SOURCE_ROOT; };
 		5C7CB6D31717282A00C6A3D7 /* libtcc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = libtcc.c; sourceTree = SOURCE_ROOT; };
-		5C7CB6D41717282A00C6A3D7 /* tcc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tcc.c; sourceTree = SOURCE_ROOT; };
 		5C7CB6D51717282A00C6A3D7 /* tccgen.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tccgen.c; sourceTree = SOURCE_ROOT; };
 		5C7CB6D61717282A00C6A3D7 /* tccpp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tccpp.c; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
@@ -65,7 +63,6 @@
 			children = (
 				5C7CB6D31717282A00C6A3D7 /* libtcc.c */,
 				5C7CB6D01717282A00C6A3D7 /* libtcc.h */,
-				5C7CB6D41717282A00C6A3D7 /* tcc.c */,
 				5C7CB6D11717282A00C6A3D7 /* tcc.h */,
 				5C7CB6D51717282A00C6A3D7 /* tccgen.c */,
 				5C7CB6D61717282A00C6A3D7 /* tccpp.c */,
@@ -124,7 +121,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				5C7CB6D71717282A00C6A3D7 /* libtcc.c in Sources */,
-				5C7CB6D81717282A00C6A3D7 /* tcc.c in Sources */,
 				5C7CB6D91717282A00C6A3D7 /* tccgen.c in Sources */,
 				5C7CB6DA1717282A00C6A3D7 /* tccpp.c in Sources */,
 			);
