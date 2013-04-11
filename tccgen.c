@@ -129,7 +129,6 @@ ST_FUNC Sym *sym_push2(Sym **ps, int v, int t, long c)
                 tcc_error("incompatible types for redefinition of '%s'",
                           get_tok_str(v, NULL));
     }
-    s = *ps;
     s = sym_malloc();
     s->v = v;
     s->type.t = t;
@@ -166,16 +165,8 @@ ST_FUNC void swap(int *p, int *q)
 
 static void vsetc(CType *type, int r, CValue *vc)
 {
-    int v;
-
     if (vtop >= vstack + (VSTACK_SIZE - 1))
         tcc_error("memory full");
-    /* cannot let cpu flags if other instruction are generated. Also
-       avoid leaving VT_JMP anywhere except on the top of the stack
-       because it would complicate the code generator. */
-    if (vtop >= vstack) {
-        v = vtop->r & VT_VALMASK;
-    }
     vtop++;
     vtop->type = *type;
     vtop->r = r;
@@ -319,8 +310,6 @@ ST_FUNC void vrott(int n)
 /* pop stack value */
 ST_FUNC void vpop(void)
 {
-    int v;
-    v = vtop->r & VT_VALMASK;
     vtop--;
 }
 
@@ -615,12 +604,11 @@ static void vpush_tokc(int t)
 
 ST_FUNC void unary(void)
 {
-    int t, sizeof_caller;
+    int t;
     CType type;
     Sym *s;
     static int in_sizeof = 0;
 
-    sizeof_caller = in_sizeof;
     in_sizeof = 0;
     switch(tok) {
     case TOK_CINT:
@@ -816,11 +804,8 @@ ST_FUNC void unary(void)
 
 ST_FUNC void expr_prod(void)
 {
-    int t;
-
     unary();
     while (tok == '*' || tok == '/' || tok == '%') {
-        t = tok;
         next();
         unary();
     }
@@ -828,11 +813,8 @@ ST_FUNC void expr_prod(void)
 
 ST_FUNC void expr_sum(void)
 {
-    int t;
-
     expr_prod();
     while (tok == '+' || tok == '-') {
-        t = tok;
         next();
         expr_prod();
     }
@@ -840,11 +822,8 @@ ST_FUNC void expr_sum(void)
 
 static void expr_shift(void)
 {
-    int t;
-
     expr_sum();
     while (tok == TOK_SHL || tok == TOK_SAR) {
-        t = tok;
         next();
         expr_sum();
     }
@@ -852,12 +831,9 @@ static void expr_shift(void)
 
 static void expr_cmp(void)
 {
-    int t;
-
     expr_shift();
     while ((tok >= TOK_ULE && tok <= TOK_GT) ||
            tok == TOK_ULT || tok == TOK_UGE) {
-        t = tok;
         next();
         expr_shift();
     }
@@ -865,11 +841,8 @@ static void expr_cmp(void)
 
 static void expr_cmpeq(void)
 {
-    int t;
-
     expr_cmp();
     while (tok == TOK_EQ || tok == TOK_NE) {
-        t = tok;
         next();
         expr_cmp();
     }

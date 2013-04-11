@@ -2908,7 +2908,7 @@ ST_FUNC int tcc_preprocess(TCCState *s1)
                 continue;
             ++line_ref;
             token_seen = 0;
-        } else if (!token_seen) {
+        } else if (!token_seen && file != NULL) {
             d = file->line_num - line_ref;
             if (file != file_ref || d < 0 || d >= 8) {
 print_line:

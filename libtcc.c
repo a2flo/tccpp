@@ -188,7 +188,7 @@ static void tcc_split_path(TCCState *s, void ***p_ary, int *p_nb_ary, const char
         cstr_new(&str);
         for (p = in; c = *p, c != '\0' && c != PATHSEP; ++p) {
             if (c == '{' && p[1] && p[2] == '}') {
-                c = p[1], p += 2;
+                p += 2;
             } else {
                 cstr_ccat(&str, c);
             }
