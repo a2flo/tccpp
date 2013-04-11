@@ -1133,16 +1133,6 @@ static void parse_attribute(AttributeDef *ad)
             next();
             skip(')');
             break;
-        case TOK_ALIAS1:
-        case TOK_ALIAS2:
-            skip('(');
-            if (tok != TOK_STR)
-                expect("alias(\"target\")");
-            ad->alias_target = /* save string as token, for later */
-              tok_alloc((char*)tokc.cstr->data, tokc.cstr->size-1)->tok;
-            next();
-            skip(')');
-            break;
         case TOK_ALIGNED1:
         case TOK_ALIGNED2:
             if (tok == '(') {
@@ -1159,74 +1149,6 @@ static void parse_attribute(AttributeDef *ad)
         case TOK_PACKED1:
         case TOK_PACKED2:
             ad->packed = 1;
-            break;
-        case TOK_WEAK1:
-        case TOK_WEAK2:
-            ad->weak = 1;
-            break;
-        case TOK_UNUSED1:
-        case TOK_UNUSED2:
-            /* currently, no need to handle it because tcc does not
-               track unused objects */
-            break;
-        case TOK_NORETURN1:
-        case TOK_NORETURN2:
-            /* currently, no need to handle it because tcc does not
-               track unused objects */
-            break;
-        case TOK_CDECL1:
-        case TOK_CDECL2:
-        case TOK_CDECL3:
-            ad->func_call = FUNC_CDECL;
-            break;
-        case TOK_STDCALL1:
-        case TOK_STDCALL2:
-        case TOK_STDCALL3:
-            ad->func_call = FUNC_STDCALL;
-            break;
-#ifdef TCC_TARGET_I386
-        case TOK_REGPARM1:
-        case TOK_REGPARM2:
-            skip('(');
-            n = expr_const();
-            if (n > 3) 
-                n = 3;
-            else if (n < 0)
-                n = 0;
-            if (n > 0)
-                ad->func_call = FUNC_FASTCALL1 + n - 1;
-            skip(')');
-            break;
-        case TOK_FASTCALL1:
-        case TOK_FASTCALL2:
-        case TOK_FASTCALL3:
-            ad->func_call = FUNC_FASTCALLW;
-            break;            
-#endif
-        case TOK_MODE:
-            skip('(');
-            switch(tok) {
-                case TOK_MODE_DI:
-                    ad->mode = VT_LLONG + 1;
-                    break;
-                case TOK_MODE_HI:
-                    ad->mode = VT_SHORT + 1;
-                    break;
-                case TOK_MODE_SI:
-                    ad->mode = VT_INT + 1;
-                    break;
-                default:
-                    tcc_warning("__mode__(%s) not supported\n", get_tok_str(tok, NULL));
-                    break;
-            }
-            next();
-            skip(')');
-            break;
-        case TOK_DLLEXPORT:
-            ad->func_export = 1;
-            break;
-        case TOK_DLLIMPORT:
-            ad->func_import = 1;
             break;
         default:
             if (tcc_state->warn_unsupported)
@@ -1469,11 +1391,6 @@ static int parse_btype(CType *type, AttributeDef *ad)
     t = 0;
     while(1) {
         switch(tok) {
-        case TOK_EXTENSION:
-            /* currently, we really ignore extension */
-            next();
-            continue;
-
             /* basic types */
         case TOK_CHAR:
             u = VT_BYTE;
@@ -1961,9 +1878,6 @@ ST_FUNC void unary(void)
        better here */
  tok_next:
     switch(tok) {
-    case TOK_EXTENSION:
-        next();
-        goto tok_next;
     case TOK_CINT:
     case TOK_CCHAR: 
     case TOK_LCHAR:
@@ -2110,78 +2024,6 @@ ST_FUNC void unary(void)
         }
         vtop->type.t |= VT_UNSIGNED;
         break;
-
-    case TOK_builtin_types_compatible_p:
-        {
-            CType type1, type2;
-            next();
-            skip('(');
-            parse_type(&type1);
-            skip(',');
-            parse_type(&type2);
-            skip(')');
-            type1.t &= ~(VT_CONSTANT | VT_VOLATILE);
-            type2.t &= ~(VT_CONSTANT | VT_VOLATILE);
-            vpushi(is_compatible_types(&type1, &type2));
-        }
-        break;
-    case TOK_builtin_constant_p:
-        {
-            int res;
-            next();
-            skip('(');
-            gexpr();
-            res = (vtop->r & (VT_VALMASK | VT_LVAL | VT_SYM)) == VT_CONST;
-            vpop();
-            skip(')');
-            vpushi(res);
-        }
-        break;
-    case TOK_builtin_frame_address:
-        {
-            int level;
-            CType type;
-            next();
-            skip('(');
-            if (tok != TOK_CINT || tokc.i < 0) {
-                tcc_error("__builtin_frame_address only takes positive integers");
-            }
-            level = tokc.i;
-            next();
-            skip(')');
-            type.t = VT_VOID;
-            mk_pointer(&type);
-            vset(&type, VT_LOCAL, 0);       /* local frame */
-            while (level--) {
-                mk_pointer(&vtop->type);
-                indir();                    /* -> parent frame */
-            }
-        }
-        break;
-#ifdef TCC_TARGET_X86_64
-    case TOK_builtin_va_arg_types:
-        {
-            /* This definition must be synced with stdarg.h */
-            enum __va_arg_type {
-                __va_gen_reg, __va_float_reg, __va_stack
-            };
-            CType type;
-            int bt;
-            next();
-            skip('(');
-            parse_type(&type);
-            skip(')');
-            bt = type.t & VT_BTYPE;
-            if (bt == VT_STRUCT || bt == VT_LDOUBLE) {
-                vpushi(__va_stack);
-            } else if (bt == VT_FLOAT || bt == VT_DOUBLE) {
-                vpushi(__va_float_reg);
-            } else {
-                vpushi(__va_gen_reg);
-            }
-        }
-        break;
-#endif
     case TOK_INC:
     case TOK_DEC:
         t = tok;

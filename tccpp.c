@@ -1319,7 +1319,6 @@ ST_FUNC void preprocess(int is_bof)
             define_undef(s);
         break;
     case TOK_INCLUDE:
-    case TOK_INCLUDE_NEXT:
         ch = file->buf_ptr[0];
         /* XXX: incorrect if comments : use next_nomacro with a special mode */
         skip_spaces();
@@ -1388,7 +1387,6 @@ ST_FUNC void preprocess(int is_bof)
         for (i = -2; i < n; ++i) {
             char buf1[sizeof file->filename];
             CachedInclude *e;
-            BufferedFile **f;
             const char *path;
 
             if (i == -2) {
@@ -1416,15 +1414,6 @@ ST_FUNC void preprocess(int is_bof)
             }
 
             pstrcat(buf1, sizeof(buf1), buf);
-
-            if (tok == TOK_INCLUDE_NEXT)
-                for (f = s1->include_stack_ptr; f >= s1->include_stack; --f)
-                    if (0 == PATHCMP((*f)->filename, buf1)) {
-#ifdef INC_DEBUG
-                        printf("%s: #include_next skipping %s\n", file->filename, buf1);
-#endif
-                        goto include_trynext;
-                    }
 
             e = search_cached_include(s1, buf1);
             if (e && define_find(e->ifndef_macro)) {
