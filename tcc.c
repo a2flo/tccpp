@@ -36,8 +36,7 @@ static void help(void)
            );
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, const char* argv[]) {
     TCCState *s;
     int ret, optind, i;
     const char *first_file = NULL;

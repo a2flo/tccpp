@@ -611,7 +611,7 @@ static void parse_option_D(TCCState *s1, const char *optarg)
     tcc_free(sym);
 }
 
-PUB_FUNC int tcc_parse_args(TCCState *s, int argc, char **argv)
+PUB_FUNC int tcc_parse_args(TCCState *s, int argc, const char **argv)
 {
     const TCCOption *popt;
     const char *optarg, *r;
@@ -681,7 +681,8 @@ PUB_FUNC int tcc_parse_args(TCCState *s, int argc, char **argv)
 LIBTCCAPI int tcc_set_options(TCCState *s, const char *str)
 {
     const char *s1;
-    char **argv, *arg;
+    const char **argv;
+	char *arg;
     int argc, len;
     int ret;
 

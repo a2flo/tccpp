@@ -734,7 +734,7 @@ ST_FUNC void tcc_close(void);
 ST_FUNC int tcc_add_file_internal(TCCState *s1, const char *filename, int flags);
 
 PUB_FUNC void tcc_print_stats(TCCState *s, int64_t total_time);
-PUB_FUNC int tcc_parse_args(TCCState *s, int argc, char **argv);
+PUB_FUNC int tcc_parse_args(TCCState *s, int argc, const char **argv);
 
 /* ------------ tccpp.c ------------ */
 
