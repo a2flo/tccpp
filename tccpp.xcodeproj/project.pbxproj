@@ -14,6 +14,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		5C4ACFE5171760BA00575953 /* README.textile */ = {isa = PBXFileReference; lastKnownFileType = text; path = README.textile; sourceTree = "<group>"; };
 		5C7CB6C11717277000C6A3D7 /* tccpp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = tccpp; sourceTree = BUILT_PRODUCTS_DIR; };
 		5C7CB6D01717282A00C6A3D7 /* libtcc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = libtcc.h; sourceTree = SOURCE_ROOT; };
 		5C7CB6D11717282A00C6A3D7 /* tcc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tcc.h; sourceTree = SOURCE_ROOT; };
@@ -35,10 +36,19 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		5C4ACFE4171760AF00575953 /* misc */ = {
+			isa = PBXGroup;
+			children = (
+				5C4ACFE5171760BA00575953 /* README.textile */,
+			);
+			name = misc;
+			sourceTree = "<group>";
+		};
 		5C7CB6B81717277000C6A3D7 = {
 			isa = PBXGroup;
 			children = (
 				5C7CB6C31717277000C6A3D7 /* tccpp */,
+				5C4ACFE4171760AF00575953 /* misc */,
 				5C7CB6C21717277000C6A3D7 /* Products */,
 			);
 			sourceTree = "<group>";
