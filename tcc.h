@@ -555,10 +555,66 @@ struct TCCState {
 /* all identificators and strings have token above that */
 #define TOK_IDENT 256
 
+#define TCC_TOKEN_LIST_APPLY(F) \
+	/* keywords */ \
+	F(TOK_INT, "int") \
+	F(TOK_VOID, "void") \
+	F(TOK_CHAR, "char") \
+	F(TOK_IF, "if") \
+	F(TOK_ELSE, "else") \
+	F(TOK_WHILE, "while") \
+	F(TOK_BREAK, "break") \
+	F(TOK_RETURN, "return") \
+	F(TOK_FOR, "for") \
+	F(TOK_EXTERN, "extern") \
+	F(TOK_STATIC, "static") \
+	F(TOK_UNSIGNED, "unsigned") \
+	F(TOK_GOTO, "goto") \
+	F(TOK_DO, "do") \
+	F(TOK_CONTINUE, "continue") \
+	F(TOK_SWITCH, "switch") \
+	F(TOK_CASE, "case") \
+	F(TOK_CONST1, "const") \
+	F(TOK_VOLATILE1, "volatile") \
+	F(TOK_LONG, "long") \
+	F(TOK_REGISTER, "register") \
+	F(TOK_SIGNED1, "signed") \
+	F(TOK_AUTO, "auto") \
+	F(TOK_INLINE1, "inline") \
+	F(TOK_RESTRICT1, "restrict") \
+	F(TOK_RESTRICT2, "__restrict") \
+	F(TOK_RESTRICT3, "__restrict__") \
+	/*********************************************************************/ \
+	/* the following are not keywords. They are included to ease parsing */ \
+	/* preprocessor only */ \
+	F(TOK_DEFINE, "define") \
+	F(TOK_INCLUDE, "include") \
+	F(TOK_IFDEF, "ifdef") \
+	F(TOK_IFNDEF, "ifndef") \
+	F(TOK_ELIF, "elif") \
+	F(TOK_ENDIF, "endif") \
+	F(TOK_DEFINED, "defined") \
+	F(TOK_UNDEF, "undef") \
+	F(TOK_ERROR, "error") \
+	F(TOK_WARNING, "warning") \
+	F(TOK_LINE, "line") \
+	F(TOK_PRAGMA, "pragma") \
+	F(TOK___LINE__, "__LINE__") \
+	F(TOK___FILE__, "__FILE__") \
+	F(TOK___DATE__, "__DATE__") \
+	F(TOK___TIME__, "__TIME__") \
+	F(TOK___VA_ARGS__, "__VA_ARGS__") \
+	/* special identifiers */ \
+	F(TOK___FUNC__, "__func__") \
+	/* special floating point values */ \
+	F(TOK___NAN__, "__nan__") \
+	F(TOK___SNAN__, "__snan__") \
+	F(TOK___INF__, "__inf__")
+
 enum tcc_token {
     TOK_LAST = TOK_IDENT - 1,
 #define DEF(id, str) id,
-#include "tcctok.h"
+	TCC_TOKEN_LIST_APPLY(DEF)
 #undef DEF
 };
 

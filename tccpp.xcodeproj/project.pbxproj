@@ -18,7 +18,6 @@
 		5C7CB6C11717277000C6A3D7 /* tccpp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = tccpp; sourceTree = BUILT_PRODUCTS_DIR; };
 		5C7CB6D01717282A00C6A3D7 /* libtcc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = libtcc.h; sourceTree = SOURCE_ROOT; };
 		5C7CB6D11717282A00C6A3D7 /* tcc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tcc.h; sourceTree = SOURCE_ROOT; };
-		5C7CB6D21717282A00C6A3D7 /* tcctok.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tcctok.h; sourceTree = SOURCE_ROOT; };
 		5C7CB6D31717282A00C6A3D7 /* libtcc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = libtcc.c; sourceTree = SOURCE_ROOT; };
 		5C7CB6D41717282A00C6A3D7 /* tcc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tcc.c; sourceTree = SOURCE_ROOT; };
 		5C7CB6D51717282A00C6A3D7 /* tccgen.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tccgen.c; sourceTree = SOURCE_ROOT; };
@@ -70,7 +69,6 @@
 				5C7CB6D11717282A00C6A3D7 /* tcc.h */,
 				5C7CB6D51717282A00C6A3D7 /* tccgen.c */,
 				5C7CB6D61717282A00C6A3D7 /* tccpp.c */,
-				5C7CB6D21717282A00C6A3D7 /* tcctok.h */,
 			);
 			path = tccpp;
 			sourceTree = "<group>";

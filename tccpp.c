@@ -69,7 +69,7 @@ static unsigned char isidnum_table[256-CH_EOF];
 
 static const char tcc_keywords[] = 
 #define DEF(id, str) str "\0"
-#include "tcctok.h"
+TCC_TOKEN_LIST_APPLY(DEF)
 #undef DEF
 ;
 
