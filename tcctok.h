@@ -45,14 +45,6 @@
      DEF(TOK_TYPEDEF, "typedef")
      DEF(TOK_DEFAULT, "default")
      DEF(TOK_ENUM, "enum")
-     DEF(TOK_SIZEOF, "sizeof")
-     DEF(TOK_ATTRIBUTE1, "__attribute")
-     DEF(TOK_ATTRIBUTE2, "__attribute__")
-     DEF(TOK_ALIGNOF1, "__alignof")
-     DEF(TOK_ALIGNOF2, "__alignof__")
-     DEF(TOK_TYPEOF1, "typeof")
-     DEF(TOK_TYPEOF2, "__typeof")
-     DEF(TOK_TYPEOF3, "__typeof__")
 
 /*********************************************************************/
 /* the following are not keywords. They are included to ease parsing */
