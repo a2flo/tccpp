@@ -1104,12 +1104,6 @@ ST_FUNC void label_pop(Sym **ptop, Sym *slast)
         } else if (s->r == LABEL_FORWARD) {
                 tcc_error("label '%s' used but not defined",
                       get_tok_str(s->v, NULL));
-        } else {
-            if (s->c) {
-                /* define corresponding symbol. A size of
-                   1 is put. */
-                put_extern_sym(s, cur_text_section, s->jnext, 1);
-            }
         }
         /* remove label */
         table_ident[s->v - TOK_IDENT]->sym_label = s->prev_tok;
@@ -1299,6 +1293,8 @@ static void pragma_parse(TCCState *s1)
     int val;
 
     next();
+	// TODO: remove this -> not allowed, error!
+#if 0
     if (tok == TOK_pack) {
         /*
           This may be:
@@ -1339,6 +1335,7 @@ static void pragma_parse(TCCState *s1)
             skip(')');
         }
     }
+#endif
 }
 
 /* is_bof is true if first non space token at beginning of file */
@@ -1497,8 +1494,11 @@ include_trynext:
             /* push current file in stack */
             ++s1->include_stack_ptr;
             /* add include file debug info */
+			// TODO: remove this
+#if 0
             if (s1->do_debug)
                 put_stabs(file->filename, N_BINCL, 0, 0, 0);
+#endif
             tok_flags |= TOK_FLAG_BOF | TOK_FLAG_BOL;
             ch = file->buf_ptr[0];
             goto the_end;
@@ -2133,9 +2133,12 @@ static inline void next_nomacro1(void)
                 }
 
                 /* add end of include file debug info */
+				// TODO: remove this
+#if 0
                 if (tcc_state->do_debug) {
                     put_stabd(N_EINCL, 0, 0);
                 }
+#endif
                 /* pop include stack */
                 tcc_close();
                 s1->include_stack_ptr--;

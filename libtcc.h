@@ -50,9 +50,6 @@ LIBTCCAPI void tcc_undefine_symbol(TCCState *s, const char *sym);
 /* add a file (C file, dll, object, library, ld script). Return -1 if error. */
 LIBTCCAPI int tcc_add_file(TCCState *s, const char *filename);
 
-/* compile a string containing a C source. Return -1 if error. */
-LIBTCCAPI int tcc_compile_string(TCCState *s, const char *buf);
-
 /*****************************/
 /* linking commands */
 
@@ -69,13 +66,6 @@ LIBTCCAPI int tcc_add_library_path(TCCState *s, const char *pathname);
 
 /* the library name is the same as the argument of the '-l' option */
 LIBTCCAPI int tcc_add_library(TCCState *s, const char *libraryname);
-
-/* add a symbol to the compiled program */
-LIBTCCAPI int tcc_add_symbol(TCCState *s, const char *name, const void *val);
-
-/* output an executable, library or object file. DO NOT call
-   tcc_relocate() before. */
-LIBTCCAPI int tcc_output_file(TCCState *s, const char *filename);
 
 /* link and run main() function and return its value. DO NOT call
    tcc_relocate() before. */

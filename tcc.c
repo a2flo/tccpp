@@ -338,7 +338,6 @@ int main(int argc, char **argv)
         } else {
             if (!s->outfile)
                 s->outfile = default_outputfile(s, first_file);
-            ret = !!tcc_output_file(s, s->outfile);
             /* dump collected dependencies */
             if (s->gen_deps && !ret)
                 gen_makedeps(s, s->outfile, s->deps_outfile);
