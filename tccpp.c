@@ -274,11 +274,7 @@ ST_FUNC char *get_tok_str(int v, CValue *cv)
     case TOK_CLLONG:
     case TOK_CULLONG:
         /* XXX: not quite exact, but only useful for testing  */
-#ifdef _WIN32
-        sprintf(p, "%u", (unsigned)cv->ull);
-#else
-        sprintf(p, "%Lu", cv->ull);
-#endif
+        sprintf(p, "%llu", cv->ull);
         break;
     case TOK_LCHAR:
         cstr_ccat(&cstr_buf, 'L');
@@ -1238,11 +1234,10 @@ ST_FUNC void parse_define(void)
 
 static inline int hash_cached_include(const char *filename)
 {
-    const unsigned char *s;
     unsigned int h;
 
     h = TOK_HASH_INIT;
-    s = filename;
+	const unsigned char * s = (const unsigned char *)filename;
     while (*s) {
         h = TOK_HASH_FUNC(h, *s);
         s++;
@@ -1426,7 +1421,6 @@ ST_FUNC void preprocess(int is_bof)
             }
 
             if (tcc_open(s1, buf1) < 0)
-include_trynext:
                 continue;
 
 #ifdef INC_DEBUG
@@ -2157,7 +2151,7 @@ maybe_newline:
                     goto token_found;
                 pts = &(ts->hash_next);
             }
-            ts = tok_alloc_new(pts, p1, len);
+            ts = tok_alloc_new(pts, (const char*)p1, len);
         token_found: ;
         } else {
             /* slower case */

@@ -72,68 +72,6 @@ static void help(void)
            );
 }
 
-/* re-execute the i386/x86_64 cross-compilers with tcc -m32/-m64: */
-#if defined TCC_TARGET_I386 || defined TCC_TARGET_X86_64
-#ifdef _WIN32
-#include <process.h>
-static int execvp_win32(const char *prog, char **argv)
-{
-    int ret = spawnvp(P_NOWAIT, prog, (char const*const*)argv);
-    if (-1 == ret)
-        return ret;
-    cwait(&ret, ret, WAIT_CHILD);
-    exit(ret);
-}
-#define execvp execvp_win32
-#endif
-static void exec_other_tcc(TCCState *s, char **argv, const char *optarg)
-{
-    char child_path[4096], *child_name; const char *target;
-    switch (atoi(optarg)) {
-#ifdef TCC_TARGET_I386
-        case 32: break;
-        case 64: target = "x86_64";
-#else
-        case 64: break;
-        case 32: target = "i386";
-#endif
-            pstrcpy(child_path, sizeof child_path - 40, argv[0]);
-            child_name = tcc_basename(child_path);
-            strcpy(child_name, target);
-#ifdef TCC_TARGET_PE
-            strcat(child_name, "-win32");
-#endif
-            strcat(child_name, "-tcc");
-            if (strcmp(argv[0], child_path)) {
-                if (s->verbose > 0)
-                    printf("tcc: using '%s'\n", child_name), fflush(stdout);
-                execvp(argv[0] = child_path, argv);
-            }
-            tcc_error("'%s' not found", child_name);
-        case 0: /* ignore -march etc. */
-            break;
-        default:
-            tcc_warning("unsupported option \"-m%s\"", optarg);
-    }
-}
-#else
-#define exec_other_tcc(s, argv, optarg)
-#endif
-
-static char *default_outputfile(TCCState *s, const char *first_file)
-{
-    char buf[1024];
-    char *ext;
-    const char *name = "a";
-
-    if (first_file && strcmp(first_file, "-"))
-        name = tcc_basename(first_file);
-    pstrcpy(buf, sizeof(buf), name);
-    ext = tcc_fileextension(buf);
-	strcpy(ext, ".o");
-    return tcc_strdup(buf);
-}
-
 static void print_paths(const char *msg, char **paths, int nb_paths)
 {
     int i;
@@ -182,19 +120,6 @@ static void display_info(TCCState *s, int what)
         printf("elfinterp:\n  %s\n",  CONFIG_TCC_ELFINTERP);
         break;
     }
-}
-
-static int64_t getclock_us(void)
-{
-#ifdef _WIN32
-    struct _timeb tb;
-    _ftime(&tb);
-    return (tb.time * 1000LL + tb.millitm) * 1000LL;
-#else
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return tv.tv_sec * 1000000LL + tv.tv_usec;
-#endif
 }
 
 int main(int argc, char **argv)

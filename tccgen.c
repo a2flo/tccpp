@@ -341,19 +341,6 @@ static inline void vpushll(long long v)
     vpush64(VT_LLONG, v);
 }
 
-/* Return a static symbol pointing to a section */
-ST_FUNC Sym *get_sym_ref(CType *type, Section *sec, unsigned long offset, unsigned long size)
-{
-    int v;
-    Sym *sym;
-
-    v = anon_sym++;
-    sym = global_identifier_push(v, type->t | VT_STATIC, 0);
-    sym->type.ref = type->ref;
-    sym->r = VT_CONST | VT_SYM;
-    return sym;
-}
-
 /* push a reference to a section offset by adding a dummy symbol */
 static void vpush_ref(CType *type, Section *sec, unsigned long offset, unsigned long size)
 {
@@ -361,58 +348,14 @@ static void vpush_ref(CType *type, Section *sec, unsigned long offset, unsigned 
 
     cval.ul = 0;
     vsetc(type, VT_CONST | VT_SYM, &cval);
-    vtop->sym = get_sym_ref(type, sec, offset, size);
-}
-
-/* define a new external reference to a symbol 'v' of type 'u' */
-ST_FUNC Sym *external_global_sym(int v, CType *type, int r)
-{
-    Sym *s;
-
-    s = sym_find(v);
-    if (!s) {
-        /* push forward reference */
-        s = global_identifier_push(v, type->t | VT_EXTERN, 0);
-        s->type.ref = type->ref;
-        s->r = r | VT_CONST | VT_SYM;
-    }
-    return s;
-}
-
-/* define a new external reference to a symbol 'v' with alternate asm
-   name 'asm_label' of type 'u'. 'asm_label' is equal to NULL if there
-   is no alternate name (most cases) */
-static Sym *external_sym(int v, CType *type, int r, char *asm_label)
-{
-    Sym *s;
-
-    s = sym_find(v);
-    if (!s) {
-        /* push forward reference */
-        s = sym_push(v, type, r | VT_CONST | VT_SYM, 0);
-        s->asm_label = asm_label;
-        s->type.t |= VT_EXTERN;
-    } else if (s->type.ref == func_old_type.ref) {
-        s->type.ref = type->ref;
-        s->r = r | VT_CONST | VT_SYM;
-        s->type.t |= VT_EXTERN;
-    } else if (!is_compatible_types(&s->type, type)) {
-        tcc_error("incompatible types for redefinition of '%s'", 
-              get_tok_str(v, NULL));
-    }
-    return s;
 }
 
 /* push a reference to global symbol v */
 ST_FUNC void vpush_global_sym(CType *type, int v)
 {
-    Sym *sym;
     CValue cval;
-
-    sym = external_global_sym(v, type, 0);
     cval.ul = 0;
     vsetc(type, VT_CONST | VT_SYM, &cval);
-    vtop->sym = sym;
 }
 
 ST_FUNC void vset(CType *type, int r, int v)
@@ -469,20 +412,6 @@ static void gaddrof(void)
         vtop->r = (vtop->r & ~(VT_VALMASK | VT_LVAL_TYPE)) | VT_LOCAL | VT_LVAL;
 
 
-}
-
-/* expand long long on stack in two int registers */
-static void lexpand(void)
-{
-    int u;
-
-    u = vtop->type.t & VT_UNSIGNED;
-    vdup();
-    vtop[0].r = vtop[-1].r2;
-    vtop[0].r2 = VT_CONST;
-    vtop[-1].r2 = VT_CONST;
-    vtop[0].type.t = VT_INT | u;
-    vtop[-1].type.t = VT_INT | u;
 }
 
 #ifdef TCC_TARGET_ARM
@@ -557,18 +486,6 @@ ST_FUNC void vpop(void)
     vtop--;
 }
 
-static int pointed_size(CType *type)
-{
-    int align;
-    return type_size(pointed_type(type), &align);
-}
-
-static void vla_runtime_pointed_size(CType *type)
-{
-    int align;
-    vla_runtime_type_size(pointed_type(type), &align);
-}
-
 static inline int is_null_pointer(SValue *p)
 {
     if ((p->r & (VT_VALMASK | VT_LVAL | VT_SYM)) != VT_CONST)
@@ -582,54 +499,6 @@ static inline int is_integer_btype(int bt)
 {
     return (bt == VT_BYTE || bt == VT_SHORT || 
             bt == VT_INT || bt == VT_LLONG);
-}
-
-/* check types for comparison or substraction of pointers */
-static void check_comparison_pointer_types(SValue *p1, SValue *p2, int op)
-{
-    CType *type1, *type2, tmp_type1, tmp_type2;
-    int bt1, bt2;
-    
-    /* null pointers are accepted for all comparisons as gcc */
-    if (is_null_pointer(p1) || is_null_pointer(p2))
-        return;
-    type1 = &p1->type;
-    type2 = &p2->type;
-    bt1 = type1->t & VT_BTYPE;
-    bt2 = type2->t & VT_BTYPE;
-    /* accept comparison between pointer and integer with a warning */
-    if ((is_integer_btype(bt1) || is_integer_btype(bt2)) && op != '-') {
-        if (op != TOK_LOR && op != TOK_LAND )
-            tcc_warning("comparison between pointer and integer");
-        return;
-    }
-
-    /* both must be pointers or implicit function pointers */
-    if (bt1 == VT_PTR) {
-        type1 = pointed_type(type1);
-    } else if (bt1 != VT_FUNC) 
-        goto invalid_operands;
-
-    if (bt2 == VT_PTR) {
-        type2 = pointed_type(type2);
-    } else if (bt2 != VT_FUNC) { 
-    invalid_operands:
-        tcc_error("invalid operands to binary %s", get_tok_str(op, NULL));
-    }
-    if ((type1->t & VT_BTYPE) == VT_VOID || 
-        (type2->t & VT_BTYPE) == VT_VOID)
-        return;
-    tmp_type1 = *type1;
-    tmp_type2 = *type2;
-    tmp_type1.t &= ~(VT_UNSIGNED | VT_CONSTANT | VT_VOLATILE);
-    tmp_type2.t &= ~(VT_UNSIGNED | VT_CONSTANT | VT_VOLATILE);
-    if (!is_compatible_types(&tmp_type1, &tmp_type2)) {
-        /* gcc-like error if '-' is used */
-        if (op == '-')
-            goto invalid_operands;
-        else
-            tcc_warning("comparison of distinct pointer types lacks a cast");
-    }
 }
 
 /* force char or short cast */
@@ -912,102 +781,6 @@ static int is_compatible_types(CType *type1, CType *type2)
 static int is_compatible_parameter_types(CType *type1, CType *type2)
 {
     return compare_types(type1,type2,1);
-}
-
-/* print a type. If 'varstr' is not NULL, then the variable is also
-   printed in the type */
-/* XXX: union */
-/* XXX: add array and function pointers */
-static void type_to_str(char *buf, int buf_size, 
-                 CType *type, const char *varstr)
-{
-    int bt, v, t;
-    Sym *s, *sa;
-    char buf1[256];
-    const char *tstr;
-
-    t = type->t & VT_TYPE;
-    bt = t & VT_BTYPE;
-    buf[0] = '\0';
-    if (t & VT_CONSTANT)
-        pstrcat(buf, buf_size, "const ");
-    if (t & VT_VOLATILE)
-        pstrcat(buf, buf_size, "volatile ");
-    if (t & VT_UNSIGNED)
-        pstrcat(buf, buf_size, "unsigned ");
-    switch(bt) {
-    case VT_VOID:
-        tstr = "void";
-        goto add_tstr;
-    case VT_BOOL:
-        tstr = "_Bool";
-        goto add_tstr;
-    case VT_BYTE:
-        tstr = "char";
-        goto add_tstr;
-    case VT_SHORT:
-        tstr = "short";
-        goto add_tstr;
-    case VT_INT:
-        tstr = "int";
-        goto add_tstr;
-    case VT_LONG:
-        tstr = "long";
-        goto add_tstr;
-    case VT_LLONG:
-        tstr = "long long";
-        goto add_tstr;
-    case VT_FLOAT:
-        tstr = "float";
-        goto add_tstr;
-    case VT_DOUBLE:
-        tstr = "double";
-        goto add_tstr;
-    case VT_LDOUBLE:
-        tstr = "long double";
-    add_tstr:
-        pstrcat(buf, buf_size, tstr);
-        break;
-    case VT_ENUM:
-    case VT_STRUCT:
-        if (bt == VT_STRUCT)
-            tstr = "struct ";
-        else
-            tstr = "enum ";
-        pstrcat(buf, buf_size, tstr);
-        v = type->ref->v & ~SYM_STRUCT;
-        if (v >= SYM_FIRST_ANOM)
-            pstrcat(buf, buf_size, "<anonymous>");
-        else
-            pstrcat(buf, buf_size, get_tok_str(v, NULL));
-        break;
-    case VT_FUNC:
-        s = type->ref;
-        type_to_str(buf, buf_size, &s->type, varstr);
-        pstrcat(buf, buf_size, "(");
-        sa = s->next;
-        while (sa != NULL) {
-            type_to_str(buf1, sizeof(buf1), &sa->type, NULL);
-            pstrcat(buf, buf_size, buf1);
-            sa = sa->next;
-            if (sa)
-                pstrcat(buf, buf_size, ", ");
-        }
-        pstrcat(buf, buf_size, ")");
-        goto no_var;
-    case VT_PTR:
-        s = type->ref;
-        pstrcpy(buf1, sizeof(buf1), "*");
-        if (varstr)
-            pstrcat(buf1, sizeof(buf1), varstr);
-        type_to_str(buf, buf_size, &s->type, buf1);
-        goto no_var;
-    }
-    if (varstr) {
-        pstrcat(buf, buf_size, " ");
-        pstrcat(buf, buf_size, varstr);
-    }
- no_var: ;
 }
 
 /* store vtop in lvalue pushed on stack */
@@ -1845,17 +1618,6 @@ static void parse_expr_type(CType *type)
     skip(')');
 }
 
-static void parse_type(CType *type)
-{
-    AttributeDef ad;
-    int n;
-
-    if (!parse_btype(type, &ad)) {
-        expect("type");
-    }
-    type_decl(type, &ad, &n, TYPE_ABSTRACT);
-}
-
 static void vpush_tokc(int t)
 {
     CType type;
@@ -1874,9 +1636,6 @@ ST_FUNC void unary(void)
 
     sizeof_caller = in_sizeof;
     in_sizeof = 0;
-    /* XXX: GCC 2.95.3 does not generate a table although it should be
-       better here */
- tok_next:
     switch(tok) {
     case TOK_CINT:
     case TOK_CCHAR: 
@@ -2089,7 +1848,6 @@ ST_FUNC void unary(void)
             if (tcc_state->warn_implicit_function_declaration)
                 tcc_warning("implicit declaration of function '%s'",
                         get_tok_str(t, NULL));
-            s = external_global_sym(t, &func_old_type, 0); 
         }
         if ((s->type.t & (VT_STATIC | VT_INLINE | VT_BTYPE)) ==
             (VT_STATIC | VT_INLINE | VT_FUNC)) {
