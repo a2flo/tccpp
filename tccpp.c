@@ -1254,7 +1254,7 @@ ST_FUNC void preprocess(int is_bof)
             inp();
             q = buf;
             while (ch != c && ch != '\n' && ch != CH_EOF) {
-                if ((q - buf) < sizeof(buf) - 1)
+                if ((q - buf) < (long)sizeof(buf) - 1)
                     *q++ = ch;
                 if (ch == '\\') {
                     if (handle_stray_noerror() == 0)
@@ -1459,7 +1459,7 @@ include_done:
         skip_spaces();
         q = buf;
         while (ch != '\n' && ch != CH_EOF) {
-            if ((q - buf) < sizeof(buf) - 1)
+            if ((q - buf) < (long)sizeof(buf) - 1)
                 *q++ = ch;
             if (ch == '\\') {
                 if (handle_stray_noerror() == 0)

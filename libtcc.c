@@ -206,7 +206,15 @@ static void strcat_vprintf(char *buf, int buf_size, const char *fmt, va_list ap)
 {
     int len;
     len = strlen(buf);
+	
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wformat-nonliteral"
+#endif
     vsnprintf(buf + len, buf_size - len, fmt, ap);
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 }
 
 static void strcat_printf(char *buf, int buf_size, const char *fmt, ...)
