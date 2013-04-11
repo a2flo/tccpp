@@ -1,6 +1,6 @@
 *TCCPP & TCC - Tiny C Compiler*
 
-_Copyright (c) 2001-2004 Fabrice Bellard_
+"_Copyright (c) 2001-2004 Fabrice Bellard_":http://bellard.org/tcc/
 _Copyright (c) 2013 Florian Ziesche (stripped-down TCCPP version)_
 
 p. This library is free software; you can redistribute it and/or
@@ -16,3 +16,8 @@ Lesser General Public License for more details.
 p. You should have received a copy of the GNU Lesser General Public
 License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+
+*Purpose of this project:*
+After much thought (and attempts to the contrary), I finally decided that I needed a C preprocessor for the "oclraster project":https://github.com/a2flo/oclraster to preprocess user provided OpenCL/oclraster shaders/programs. It will soon be added as a drop-in library.
+Note: even though this project can still be compiled and used as a standalone binary/preprocessor, its use in that state is relatively limited, since I've removed most of the unnecessary command line and system specific functionality.
