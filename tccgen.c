@@ -652,14 +652,6 @@ ST_FUNC void unary(void)
         vpush_tokc(VT_DOUBLE);
         next();
         break;
-    case TOK_CLDOUBLE:
-        vpush_tokc(VT_LDOUBLE);
-        next();
-        break;
-    case TOK___FUNCTION__:
-        if (!gnu_ext)
-            goto tok_identifier;
-        /* fall thru */
     case TOK___FUNC__:
         {
             /* special function name identifier */
@@ -988,10 +980,10 @@ static void expr_cond(void)
             c = vtop->c.i;
             vpop();
             next();
-            if (tok != ':' || !gnu_ext) {
-                vpop();
-                gexpr();
-            }
+			
+			vpop();
+			gexpr();
+			
             if (!c)
                 vpop();
             skip(':');
@@ -1003,10 +995,7 @@ static void expr_cond(void)
         expr_lor();
         if (tok == '?') {
             next();
-            if (tok == ':' && gnu_ext) {
-            } else {
-                gexpr();
-            }
+			gexpr();
             type1 = vtop->type;
             sv = *vtop; /* save value to handle it later */
             vtop--; /* no vpop so that FP stack is not flushed */

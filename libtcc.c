@@ -24,12 +24,6 @@
 /********************************************************/
 /* global variables */
 
-/* use GNU C extensions */
-ST_DATA int gnu_ext = 1;
-
-/* use TinyCC extensions */
-ST_DATA int tcc_ext = 1;
-
 /* XXX: get rid of this ASAP */
 ST_DATA struct TCCState *tcc_state;
 
@@ -324,9 +318,6 @@ ST_FUNC void tcc_open_bf(TCCState *s1, const char *filename, int initlen)
     bf->buf_end = bf->buffer + initlen;
     bf->buf_end[0] = CH_EOB; /* put eob symbol */
     pstrcpy(bf->filename, sizeof(bf->filename), filename);
-#ifdef _WIN32
-    normalize_slashes(bf->filename);
-#endif
     bf->line_num = 1;
     bf->ifndef_macro = 0;
     bf->ifdef_stack_ptr = s1->ifdef_stack_ptr;
@@ -593,90 +584,22 @@ typedef struct TCCOption {
 } TCCOption;
 
 enum {
-    TCC_OPTION_HELP,
     TCC_OPTION_I,
     TCC_OPTION_D,
     TCC_OPTION_U,
-    TCC_OPTION_L,
-    TCC_OPTION_B,
-    TCC_OPTION_l,
-    TCC_OPTION_bench,
-    TCC_OPTION_bt,
-    TCC_OPTION_b,
-    TCC_OPTION_g,
-    TCC_OPTION_c,
-    TCC_OPTION_static,
-    TCC_OPTION_shared,
-    TCC_OPTION_soname,
-    TCC_OPTION_o,
-    TCC_OPTION_r,
-    TCC_OPTION_s,
-    TCC_OPTION_Wl,
-    TCC_OPTION_W,
-    TCC_OPTION_O,
-    TCC_OPTION_m,
-    TCC_OPTION_f,
-    TCC_OPTION_isystem,
-    TCC_OPTION_nostdinc,
-    TCC_OPTION_nostdlib,
-    TCC_OPTION_print_search_dirs,
-    TCC_OPTION_rdynamic,
-    TCC_OPTION_pedantic,
-    TCC_OPTION_pthread,
-    TCC_OPTION_run,
     TCC_OPTION_v,
-    TCC_OPTION_w,
-    TCC_OPTION_pipe,
     TCC_OPTION_E,
-    TCC_OPTION_MD,
-    TCC_OPTION_MF,
-    TCC_OPTION_x,
-    TCC_OPTION_dumpversion,
 };
 
 #define TCC_OPTION_HAS_ARG 0x0001
 #define TCC_OPTION_NOSEP   0x0002 /* cannot have space before option and arg */
 
 static const TCCOption tcc_options[] = {
-    { "h", TCC_OPTION_HELP, 0 },
-    { "-help", TCC_OPTION_HELP, 0 },
-    { "?", TCC_OPTION_HELP, 0 },
     { "I", TCC_OPTION_I, TCC_OPTION_HAS_ARG },
     { "D", TCC_OPTION_D, TCC_OPTION_HAS_ARG },
     { "U", TCC_OPTION_U, TCC_OPTION_HAS_ARG },
-    { "L", TCC_OPTION_L, TCC_OPTION_HAS_ARG },
-    { "B", TCC_OPTION_B, TCC_OPTION_HAS_ARG },
-    { "l", TCC_OPTION_l, TCC_OPTION_HAS_ARG | TCC_OPTION_NOSEP },
-    { "bench", TCC_OPTION_bench, 0 },
-    { "g", TCC_OPTION_g, TCC_OPTION_HAS_ARG | TCC_OPTION_NOSEP },
-    { "c", TCC_OPTION_c, 0 },
-    { "static", TCC_OPTION_static, 0 },
-    { "shared", TCC_OPTION_shared, 0 },
-    { "soname", TCC_OPTION_soname, TCC_OPTION_HAS_ARG },
-    { "o", TCC_OPTION_o, TCC_OPTION_HAS_ARG },
-    { "pedantic", TCC_OPTION_pedantic, 0},
-    { "pthread", TCC_OPTION_pthread, 0},
-    { "run", TCC_OPTION_run, TCC_OPTION_HAS_ARG | TCC_OPTION_NOSEP },
-    { "rdynamic", TCC_OPTION_rdynamic, 0 },
-    { "r", TCC_OPTION_r, 0 },
-    { "s", TCC_OPTION_s, 0 },
-    { "Wl,", TCC_OPTION_Wl, TCC_OPTION_HAS_ARG | TCC_OPTION_NOSEP },
-    { "W", TCC_OPTION_W, TCC_OPTION_HAS_ARG | TCC_OPTION_NOSEP },
-    { "O", TCC_OPTION_O, TCC_OPTION_HAS_ARG | TCC_OPTION_NOSEP },
-    { "m", TCC_OPTION_m, TCC_OPTION_HAS_ARG },
-    { "f", TCC_OPTION_f, TCC_OPTION_HAS_ARG | TCC_OPTION_NOSEP },
-    { "isystem", TCC_OPTION_isystem, TCC_OPTION_HAS_ARG },
-    { "nostdinc", TCC_OPTION_nostdinc, 0 },
-    { "nostdlib", TCC_OPTION_nostdlib, 0 },
-    { "print-search-dirs", TCC_OPTION_print_search_dirs, 0 }, 
     { "v", TCC_OPTION_v, TCC_OPTION_HAS_ARG | TCC_OPTION_NOSEP },
-    { "w", TCC_OPTION_w, 0 },
-    { "pipe", TCC_OPTION_pipe, 0},
     { "E", TCC_OPTION_E, 0},
-    { "MD", TCC_OPTION_MD, 0},
-    { "MF", TCC_OPTION_MF, TCC_OPTION_HAS_ARG },
-    { "x", TCC_OPTION_x, TCC_OPTION_HAS_ARG },
-    { "dumpversion", TCC_OPTION_dumpversion, 0},
     { NULL, 0, 0 },
 };
 

@@ -819,8 +819,6 @@ static inline int tok_ext_size(int t)
     case TOK_CLLONG:
     case TOK_CULLONG:
         return 2;
-    case TOK_CLDOUBLE:
-        return LDOUBLE_SIZE / 4;
     default:
         return 0;
     }
@@ -911,26 +909,8 @@ static void tok_str_add2(TokenString *s, int t, CValue *cv)
     case TOK_CDOUBLE:
     case TOK_CLLONG:
     case TOK_CULLONG:
-#if LDOUBLE_SIZE == 8
-    case TOK_CLDOUBLE:
-#endif
         str[len++] = cv->tab[0];
         str[len++] = cv->tab[1];
-        break;
-#if LDOUBLE_SIZE == 12
-    case TOK_CLDOUBLE:
-        str[len++] = cv->tab[0];
-        str[len++] = cv->tab[1];
-        str[len++] = cv->tab[2];
-#elif LDOUBLE_SIZE == 16
-    case TOK_CLDOUBLE:
-        str[len++] = cv->tab[0];
-        str[len++] = cv->tab[1];
-        str[len++] = cv->tab[2];
-        str[len++] = cv->tab[3];
-#elif LDOUBLE_SIZE != 8
-#error add long double size support
-#endif
         break;
     default:
         break;
@@ -980,18 +960,6 @@ static inline void TOK_GET(int *t, const int **pp, CValue *cv)
     case TOK_CLLONG:
     case TOK_CULLONG:
         n = 2;
-        goto copy;
-    case TOK_CLDOUBLE:
-#if LDOUBLE_SIZE == 16
-        n = 4;
-#elif LDOUBLE_SIZE == 12
-        n = 3;
-#elif LDOUBLE_SIZE == 8
-        n = 2;
-#else
-# error add long double size support
-#endif
-    copy:
         do
             *tab++ = *p++;
         while (--n);
@@ -1150,9 +1118,6 @@ ST_FUNC void parse_define(void)
             if (varg == TOK_DOTS) {
                 varg = TOK___VA_ARGS__;
                 is_vaargs = 1;
-            } else if (tok == TOK_DOTS && gnu_ext) {
-                is_vaargs = 1;
-                next_nomacro();
             }
             if (varg < TOK_IDENT)
                 tcc_error("badly punctuated parameter list");
@@ -1608,10 +1573,7 @@ static void parse_escape_string(CString *outstr, const uint8_t *buf, int is_long
                 c = '\v';
                 break;
             case 'e':
-                if (!gnu_ext)
-                    goto invalid_escape;
-                c = 27;
-                break;
+				goto invalid_escape;
             case '\'':
             case '\"':
             case '\\': 
@@ -1686,10 +1648,6 @@ static void parse_number(const char *p)
             q--;
             ch = *p++;
             b = 16;
-        } else if (tcc_ext && (ch == 'b' || ch == 'B')) {
-            q--;
-            ch = *p++;
-            b = 2;
         }
     }
     /* parse all digits. cannot check octal numbers at this stage
@@ -1791,16 +1749,6 @@ static void parse_number(const char *p)
                 tok = TOK_CFLOAT;
                 /* float : should handle overflow */
                 tokc.f = (float)d;
-            } else if (t == 'L') {
-                ch = *p++;
-#ifdef TCC_TARGET_PE
-                tok = TOK_CDOUBLE;
-                tokc.d = d;
-#else
-                tok = TOK_CLDOUBLE;
-                /* XXX: not large enough */
-                tokc.ld = (long double)d;
-#endif
             } else {
                 tok = TOK_CDOUBLE;
                 tokc.d = d;
@@ -1847,15 +1795,6 @@ static void parse_number(const char *p)
                 ch = *p++;
                 tok = TOK_CFLOAT;
                 tokc.f = strtof(token_buf, NULL);
-            } else if (t == 'L') {
-                ch = *p++;
-#ifdef TCC_TARGET_PE
-                tok = TOK_CDOUBLE;
-                tokc.d = strtod(token_buf, NULL);
-#else
-                tok = TOK_CLDOUBLE;
-                tokc.ld = strtold(token_buf, NULL);
-#endif
             } else {
                 tok = TOK_CDOUBLE;
                 tokc.d = strtod(token_buf, NULL);
@@ -2460,27 +2399,13 @@ static int *macro_arg_subst(Sym **nested_list, const int *macro_str, Sym *args)
                     /* XXX: test of the ',' is not 100%
                        reliable. should fix it to avoid security
                        problems */
-                    if (gnu_ext && s->type.t &&
-                        last_tok == TOK_TWOSHARPS && 
-                        str.len >= 2 && str.str[str.len - 2] == ',') {
-                        if (*st == 0) {
-                            /* suppress ',' '##' */
-                            str.len -= 2;
-                        } else {
-                            /* suppress '##' and add variable */
-                            str.len--;
-                            goto add_var;
-                        }
-                    } else {
-                        int t1;
-                    add_var:
-                        for(;;) {
-                            TOK_GET(&t1, &st, &cval);
-                            if (!t1)
-                                break;
-                            tok_str_add2(&str, t1, &cval);
-                        }
-                    }
+					int t1;
+					for(;;) {
+						TOK_GET(&t1, &st, &cval);
+						if (!t1)
+							break;
+						tok_str_add2(&str, t1, &cval);
+					}
                 } else {
                     /* NOTE: the stream cannot be read when macro
                        substituing an argument */
@@ -2642,10 +2567,7 @@ static int macro_subst_tok(TokenString *tok_str,
                 if (tok == ')') {
                     /* special case for gcc var args: add an empty
                        var arg argument if it is omitted */
-                    if (sa && sa->type.t && gnu_ext)
-                        continue;
-                    else
-                        break;
+					break;
                 }
                 if (tok != ',')
                     expect(",");

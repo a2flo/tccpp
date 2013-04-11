@@ -148,8 +148,6 @@ typedef unsigned long long int  uint64_t;
 /* include the target specific definitions */
 
 #define PTR_SIZE 4
-#define LDOUBLE_SIZE  12
-#define LDOUBLE_ALIGN 4
 #define MAX_ALIGN     8
 
 /* -------------------------------------------- */
@@ -207,7 +205,7 @@ typedef union CValue {
     unsigned long long ull;
     struct CString *cstr;
     void *ptr;
-    int tab[LDOUBLE_SIZE/4];
+    int tab[8/4];
 } CValue;
 
 /* value on stack */
@@ -588,7 +586,6 @@ struct TCCState {
 #define TOK_CFLOAT   0xb9 /* float constant */
 #define TOK_LINENUM  0xba /* line number info */
 #define TOK_CDOUBLE  0xc0 /* double constant */
-#define TOK_CLDOUBLE 0xc1 /* long double constant */
 #define TOK_UMULL    0xc2 /* unsigned 32x32 -> 64 mul */
 #define TOK_ADDC1    0xc3 /* add with carry generation */
 #define TOK_ADDC2    0xc4 /* add with carry use */
@@ -714,10 +711,6 @@ static inline int toup(int c)
 
 /* ------------ libtcc.c ------------ */
 
-/* use GNU C extensions */
-ST_DATA int gnu_ext;
-/* use Tiny C extensions */
-ST_DATA int tcc_ext;
 /* XXX: get rid of this ASAP */
 ST_DATA struct TCCState *tcc_state;
 
