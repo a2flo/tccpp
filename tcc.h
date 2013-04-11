@@ -22,9 +22,6 @@
 #define _TCC_H
 
 #define _GNU_SOURCE
-#ifndef CONFIG_TCCDIR
-# define CONFIG_TCCDIR "/usr/local/lib/tcc"
-#endif
 #define TCC_VERSION "0.9.26"
 
 #ifdef CONFIG_TCCBOOT
@@ -82,73 +79,8 @@ typedef unsigned long long int  uint64_t;
 
 #include "libtcc.h"
 
-/* object format selection */
-#if defined(TCC_TARGET_C67)
-#define TCC_TARGET_COFF
-#endif
-
 /* only native compiler supports -run */
 #define TCC_IS_NATIVE
-
-#if defined TCC_IS_NATIVE && !defined CONFIG_TCCBOOT
-# define CONFIG_TCC_BACKTRACE
-#endif
-
-/* ------------ path configuration ------------ */
-
-#ifndef CONFIG_SYSROOT
-# define CONFIG_SYSROOT ""
-#endif
-#ifndef CONFIG_TCCDIR
-# define CONFIG_TCCDIR "."
-#endif
-#ifndef CONFIG_LDDIR
-# define CONFIG_LDDIR "lib"
-#endif
-
-/* path to find crt1.o, crti.o and crtn.o */
-#ifndef CONFIG_TCC_CRTPREFIX
-# define CONFIG_TCC_CRTPREFIX CONFIG_SYSROOT "/usr/" CONFIG_LDDIR
-#endif
-
-/* Below: {B} is substituted by CONFIG_TCCDIR (rsp. -B option) */
-
-/* system include paths */
-#ifndef CONFIG_TCC_SYSINCLUDEPATHS
-# ifdef TCC_TARGET_PE
-#  define CONFIG_TCC_SYSINCLUDEPATHS "{B}/include;{B}/include/winapi"
-# elif defined CONFIG_MULTIARCHDIR
-#  define CONFIG_TCC_SYSINCLUDEPATHS \
-        CONFIG_SYSROOT "/usr/local/include" \
-    ":" CONFIG_SYSROOT "/usr/local/include/" CONFIG_MULTIARCHDIR \
-    ":" CONFIG_SYSROOT "/usr/include" \
-    ":" CONFIG_SYSROOT "/usr/include/" CONFIG_MULTIARCHDIR \
-    ":" "{B}/include"
-# else
-#  define CONFIG_TCC_SYSINCLUDEPATHS \
-        CONFIG_SYSROOT "/usr/local/include" \
-    ":" CONFIG_SYSROOT "/usr/include" \
-    ":" "{B}/include"
-# endif
-#endif
-
-/* library search paths */
-#ifndef CONFIG_TCC_LIBPATHS
-# ifdef TCC_TARGET_PE
-#  define CONFIG_TCC_LIBPATHS "{B}/lib"
-# else
-#  define CONFIG_TCC_LIBPATHS \
-        CONFIG_SYSROOT "/usr/" CONFIG_LDDIR \
-    ":" CONFIG_SYSROOT "/" CONFIG_LDDIR \
-    ":" CONFIG_SYSROOT "/usr/local/" CONFIG_LDDIR
-# endif
-#endif
-
-/* -------------------------------------------- */
-/* include the target specific definitions */
-
-#define PTR_SIZE 4
-#define MAX_ALIGN     8
 
 /* -------------------------------------------- */
 
@@ -174,11 +106,7 @@ typedef struct TokenSym {
     char str[1];
 } TokenSym;
 
-#ifdef TCC_TARGET_PE
-typedef unsigned short nwchar_t;
-#else
 typedef int nwchar_t;
-#endif
 
 typedef struct CString {
     int size; /* size in bytes */
@@ -383,7 +311,6 @@ struct TCCState {
 
     int verbose; /* if true, display some information during compilation */
 
-    char *tcc_lib_path; /* CONFIG_TCCDIR or -B option */
     char *soname; /* as specified on the command line (-soname) */
     char *rpath; /* as specified on the command line (-Wl,-rpath=) */
 
@@ -663,11 +590,7 @@ extern long double strtold (const char *__nptr, char **__endptr);
 #define PATHCMP strcmp
 #endif
 
-#ifdef TCC_TARGET_PE
-#define PATHSEP ';'
-#else
 #define PATHSEP ':'
-#endif
 
 /* space exlcuding newline */
 static inline int is_space(int ch)

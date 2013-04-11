@@ -38,30 +38,6 @@ static void help(void)
            );
 }
 
-static void print_paths(const char *msg, char **paths, int nb_paths)
-{
-    int i;
-    printf("%s:\n%s", msg, nb_paths ? "" : "  -\n");
-    for(i = 0; i < nb_paths; i++)
-        printf("  %s\n", paths[i]);
-}
-
-static void display_info(TCCState *s, int what)
-{
-    switch (what) {
-    case 0:
-        printf("tcc version %s\n", TCC_VERSION);
-        break;
-    case 1:
-        printf("install: %s/\n", s->tcc_lib_path);
-        /* print_paths("programs", NULL, 0); */
-        print_paths("crt", s->crt_paths, s->nb_crt_paths);
-        print_paths("libraries", s->library_paths, s->nb_library_paths);
-        print_paths("include", s->sysinclude_paths, s->nb_sysinclude_paths);
-        break;
-    }
-}
-
 int main(int argc, char **argv)
 {
     TCCState *s;
@@ -79,7 +55,7 @@ int main(int argc, char **argv)
     }
 
     if (s->verbose)
-        display_info(s, 0);
+        printf("tcc version %s\n", TCC_VERSION);
 
     if (s->verbose && optind == 1)
         return 0;

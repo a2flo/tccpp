@@ -189,8 +189,6 @@ static void tcc_split_path(TCCState *s, void ***p_ary, int *p_nb_ary, const char
         for (p = in; c = *p, c != '\0' && c != PATHSEP; ++p) {
             if (c == '{' && p[1] && p[2] == '}') {
                 c = p[1], p += 2;
-                if (c == 'B')
-                    cstr_cat(&str, s->tcc_lib_path);
             } else {
                 cstr_ccat(&str, c);
             }
@@ -430,7 +428,6 @@ LIBTCCAPI TCCState *tcc_new(void)
     if (!s)
         return NULL;
     tcc_state = s;
-    tcc_set_lib_path(s, CONFIG_TCCDIR);
     s->output_type = TCC_OUTPUT_MEMORY;
     preprocess_new();
     s->include_stack_ptr = s->include_stack;
@@ -492,7 +489,6 @@ LIBTCCAPI void tcc_delete(TCCState *s1)
     dynarray_reset(&s1->include_paths, &s1->nb_include_paths);
     dynarray_reset(&s1->sysinclude_paths, &s1->nb_sysinclude_paths);
 
-    tcc_free(s1->tcc_lib_path);
     tcc_free(s1->soname);
     tcc_free(s1->rpath);
     tcc_free(s1->init_symbol);
@@ -554,12 +550,6 @@ the_end:
 LIBTCCAPI int tcc_add_file(TCCState *s, const char *filename)
 {
 	return tcc_add_file_internal(s, filename, AFF_PRINT_ERROR | AFF_PREPROCESS);
-}
-
-LIBTCCAPI void tcc_set_lib_path(TCCState *s, const char *path)
-{
-    tcc_free(s->tcc_lib_path);
-    s->tcc_lib_path = tcc_strdup(path);
 }
 
 static int strstart(const char *val, const char **str)

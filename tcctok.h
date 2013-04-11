@@ -47,7 +47,6 @@
      DEF(TOK___FILE__, "__FILE__")
      DEF(TOK___DATE__, "__DATE__")
      DEF(TOK___TIME__, "__TIME__")
-     DEF(TOK___FUNCTION__, "__FUNCTION__")
      DEF(TOK___VA_ARGS__, "__VA_ARGS__")
 
 /* special identifiers */
