@@ -25,9 +25,6 @@
 #ifndef CONFIG_TCCDIR
 # define CONFIG_TCCDIR "/usr/local/lib/tcc"
 #endif
-#define GCC_MAJOR 4
-#define GCC_MINOR 2
-#define HOST_X86_64 1
 #define TCC_VERSION "0.9.26"
 
 #ifdef CONFIG_TCCBOOT
@@ -85,49 +82,13 @@ typedef unsigned long long int  uint64_t;
 
 #include "libtcc.h"
 
-/* parser debug */
-//#define PARSE_DEBUG
-/* preprocessor debug */
-//#define PP_DEBUG
-/* include file debug */
-//#define INC_DEBUG
-/* memory leak debug */
-//#define MEM_DEBUG
-/* assembler debug */
-//#define ASM_DEBUG
-
-/* target selection */
-//#define TCC_TARGET_I386   /* i386 code generator */
-//#define TCC_TARGET_ARM    /* ARMv4 code generator */
-//#define TCC_TARGET_C67    /* TMS320C67xx code generator */
-//#define TCC_TARGET_X86_64 /* x86-64 code generator */
-
-/* default target is I386 */
-#if !defined(TCC_TARGET_I386) && !defined(TCC_TARGET_ARM) && \
-    !defined(TCC_TARGET_C67) && !defined(TCC_TARGET_X86_64)
-#define TCC_TARGET_I386
-#endif
-
-/* define it to include assembler support */
-#if !defined(TCC_TARGET_ARM) && !defined(TCC_TARGET_C67)
-#define CONFIG_TCC_ASM
-#endif
-
 /* object format selection */
 #if defined(TCC_TARGET_C67)
 #define TCC_TARGET_COFF
 #endif
 
 /* only native compiler supports -run */
-#if defined _WIN32 == defined TCC_TARGET_PE
-# if (defined __i386__ || defined _X86_) && defined TCC_TARGET_I386
-#  define TCC_IS_NATIVE
-# elif (defined __x86_64__ || defined _AMD64_) && defined TCC_TARGET_X86_64
-#  define TCC_IS_NATIVE
-# elif defined __arm__ && defined TCC_TARGET_ARM
-#  define TCC_IS_NATIVE
-# endif
-#endif
+#define TCC_IS_NATIVE
 
 #if defined TCC_IS_NATIVE && !defined CONFIG_TCCBOOT
 # define CONFIG_TCC_BACKTRACE
@@ -182,30 +143,6 @@ typedef unsigned long long int  uint64_t;
     ":" CONFIG_SYSROOT "/usr/local/" CONFIG_LDDIR
 # endif
 #endif
-
-/* name of ELF interpreter */
-#ifndef CONFIG_TCC_ELFINTERP
-# if defined __FreeBSD__
-#  define CONFIG_TCC_ELFINTERP "/libexec/ld-elf.so.1"
-# elif defined __FreeBSD_kernel__
-#  define CONFIG_TCC_ELFINTERP "/lib/ld.so.1"
-# elif defined TCC_ARM_HARDFLOAT
-#  define CONFIG_TCC_ELFINTERP "/lib/ld-linux-armhf.so.3"
-# elif defined TCC_ARM_EABI
-#  define CONFIG_TCC_ELFINTERP "/lib/ld-linux.so.3"
-# elif defined(TCC_TARGET_X86_64)
-#  define CONFIG_TCC_ELFINTERP "/lib64/ld-linux-x86-64.so.2"
-# elif defined(TCC_UCLIBC)
-#  define CONFIG_TCC_ELFINTERP "/lib/ld-uClibc.so.0"
-# elif defined(TCC_TARGET_PE)
-#  define CONFIG_TCC_ELFINTERP "-"
-# else
-#  define CONFIG_TCC_ELFINTERP "/lib/ld-linux.so.2"
-# endif
-#endif
-
-/* library to use with CONFIG_USE_LIBGCC instead of libtcc1.a */
-#define TCC_LIBGCC CONFIG_SYSROOT "/" CONFIG_LDDIR "/libgcc_s.so.1"
 
 /* -------------------------------------------- */
 /* include the target specific definitions */
@@ -440,33 +377,8 @@ typedef struct CachedInclude {
 
 #define CACHED_INCLUDES_HASH_SIZE 512
 
-#ifdef CONFIG_TCC_ASM
-typedef struct ExprValue {
-    uint32_t v;
-    Sym *sym;
-} ExprValue;
-
-#define MAX_ASM_OPERANDS 30
-typedef struct ASMOperand {
-    int id; /* GCC 3 optionnal identifier (0 if number only supported */
-    char *constraint;
-    char asm_str[16]; /* computed asm string for operand */
-    SValue *vt; /* C value of the expression */
-    int ref_index; /* if >= 0, gives reference to a output constraint */
-    int input_index; /* if >= 0, gives reference to an input constraint */
-    int priority; /* priority, used to assign registers */
-    int reg; /* if >= 0, register number used for this operand */
-    int is_llong; /* true if double register value */
-    int is_memory; /* true if memory operand */
-    int is_rw;     /* for '+' modifier */
-} ASMOperand;
-#endif
-
 struct sym_attr {
     unsigned long got_offset;
-#ifdef TCC_TARGET_ARM
-    unsigned char plt_thumb_stub:1;
-#endif
 };
 
 struct TCCState {
@@ -720,89 +632,6 @@ struct TCCState {
 /* all identificators and strings have token above that */
 #define TOK_IDENT 256
 
-#define DEF_ASM(x) DEF(TOK_ASM_ ## x, #x)
-#define TOK_ASM_int TOK_INT
-#define TOK_ASM_weak TOK_WEAK1
-
-#if defined TCC_TARGET_I386 || defined TCC_TARGET_X86_64
-/* only used for i386 asm opcodes definitions */
-#define DEF_BWL(x) \
- DEF(TOK_ASM_ ## x ## b, #x "b") \
- DEF(TOK_ASM_ ## x ## w, #x "w") \
- DEF(TOK_ASM_ ## x ## l, #x "l") \
- DEF(TOK_ASM_ ## x, #x)
-#define DEF_WL(x) \
- DEF(TOK_ASM_ ## x ## w, #x "w") \
- DEF(TOK_ASM_ ## x ## l, #x "l") \
- DEF(TOK_ASM_ ## x, #x)
-#ifdef TCC_TARGET_X86_64
-# define DEF_BWLQ(x) \
- DEF(TOK_ASM_ ## x ## b, #x "b") \
- DEF(TOK_ASM_ ## x ## w, #x "w") \
- DEF(TOK_ASM_ ## x ## l, #x "l") \
- DEF(TOK_ASM_ ## x ## q, #x "q") \
- DEF(TOK_ASM_ ## x, #x)
-# define DEF_WLQ(x) \
- DEF(TOK_ASM_ ## x ## w, #x "w") \
- DEF(TOK_ASM_ ## x ## l, #x "l") \
- DEF(TOK_ASM_ ## x ## q, #x "q") \
- DEF(TOK_ASM_ ## x, #x)
-# define DEF_BWLX DEF_BWLQ
-# define DEF_WLX DEF_WLQ
-/* number of sizes + 1 */
-# define NBWLX 5
-#else
-# define DEF_BWLX DEF_BWL
-# define DEF_WLX DEF_WL
-/* number of sizes + 1 */
-# define NBWLX 4
-#endif
-
-#define DEF_FP1(x) \
- DEF(TOK_ASM_ ## f ## x ## s, "f" #x "s") \
- DEF(TOK_ASM_ ## fi ## x ## l, "fi" #x "l") \
- DEF(TOK_ASM_ ## f ## x ## l, "f" #x "l") \
- DEF(TOK_ASM_ ## fi ## x ## s, "fi" #x "s")
-
-#define DEF_FP(x) \
- DEF(TOK_ASM_ ## f ## x, "f" #x ) \
- DEF(TOK_ASM_ ## f ## x ## p, "f" #x "p") \
- DEF_FP1(x)
-
-#define DEF_ASMTEST(x) \
- DEF_ASM(x ## o) \
- DEF_ASM(x ## no) \
- DEF_ASM(x ## b) \
- DEF_ASM(x ## c) \
- DEF_ASM(x ## nae) \
- DEF_ASM(x ## nb) \
- DEF_ASM(x ## nc) \
- DEF_ASM(x ## ae) \
- DEF_ASM(x ## e) \
- DEF_ASM(x ## z) \
- DEF_ASM(x ## ne) \
- DEF_ASM(x ## nz) \
- DEF_ASM(x ## be) \
- DEF_ASM(x ## na) \
- DEF_ASM(x ## nbe) \
- DEF_ASM(x ## a) \
- DEF_ASM(x ## s) \
- DEF_ASM(x ## ns) \
- DEF_ASM(x ## p) \
- DEF_ASM(x ## pe) \
- DEF_ASM(x ## np) \
- DEF_ASM(x ## po) \
- DEF_ASM(x ## l) \
- DEF_ASM(x ## nge) \
- DEF_ASM(x ## nl) \
- DEF_ASM(x ## ge) \
- DEF_ASM(x ## le) \
- DEF_ASM(x ## ng) \
- DEF_ASM(x ## nle) \
- DEF_ASM(x ## g)
-
-#endif // defined TCC_TARGET_I386 || defined TCC_TARGET_X86_64
-
 enum tcc_token {
     TOK_LAST = TOK_IDENT - 1,
 #define DEF(id, str) id,
@@ -998,14 +827,6 @@ ST_FUNC void expect(const char *msg);
 
 ST_DATA Section *text_section, *data_section, *bss_section; /* predefined sections */
 ST_DATA Section *cur_text_section; /* current section where function code is generated */
-#ifdef CONFIG_TCC_ASM
-ST_DATA Section *last_text_section; /* to handle .previous asm directive */
-#endif
-#ifdef CONFIG_TCC_BCHECK
-/* bound check related sections */
-ST_DATA Section *bounds_section; /* contains global data bound description */
-ST_DATA Section *lbounds_section; /* contains local data bound description */
-#endif
 /* symbol sections */
 ST_DATA Section *symtab_section, *strtab_section;
 /* debug sections */

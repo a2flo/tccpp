@@ -439,11 +439,7 @@ LIBTCCAPI TCCState *tcc_new(void)
     if (!s)
         return NULL;
     tcc_state = s;
-#ifdef _WIN32
-    tcc_set_lib_path_w32(s);
-#else
     tcc_set_lib_path(s, CONFIG_TCCDIR);
-#endif
     s->output_type = TCC_OUTPUT_MEMORY;
     preprocess_new();
     s->include_stack_ptr = s->include_stack;
@@ -463,70 +459,13 @@ LIBTCCAPI TCCState *tcc_new(void)
     /* standard defines */
     tcc_define_symbol(s, "__STDC__", NULL);
     tcc_define_symbol(s, "__STDC_VERSION__", "199901L");
-
-    /* target defines */
-#if defined(TCC_TARGET_I386)
-    tcc_define_symbol(s, "__i386__", NULL);
-    tcc_define_symbol(s, "__i386", NULL);
-    tcc_define_symbol(s, "i386", NULL);
-#elif defined(TCC_TARGET_X86_64)
-    tcc_define_symbol(s, "__x86_64__", NULL);
-#elif defined(TCC_TARGET_ARM)
-    tcc_define_symbol(s, "__ARM_ARCH_4__", NULL);
-    tcc_define_symbol(s, "__arm_elf__", NULL);
-    tcc_define_symbol(s, "__arm_elf", NULL);
-    tcc_define_symbol(s, "arm_elf", NULL);
-    tcc_define_symbol(s, "__arm__", NULL);
-    tcc_define_symbol(s, "__arm", NULL);
-    tcc_define_symbol(s, "arm", NULL);
-    tcc_define_symbol(s, "__APCS_32__", NULL);
-#endif
-
-#ifdef TCC_TARGET_PE
-    tcc_define_symbol(s, "_WIN32", NULL);
-# ifdef TCC_TARGET_X86_64
-    tcc_define_symbol(s, "_WIN64", NULL);
-# endif
-#else
-    tcc_define_symbol(s, "__unix__", NULL);
-    tcc_define_symbol(s, "__unix", NULL);
-    tcc_define_symbol(s, "unix", NULL);
-# if defined(__linux)
-    tcc_define_symbol(s, "__linux__", NULL);
-    tcc_define_symbol(s, "__linux", NULL);
-# endif
-# if defined(__FreeBSD__)
-#  define str(s) #s
-    tcc_define_symbol(s, "__FreeBSD__", str( __FreeBSD__));
-#  undef str
-# endif
-# if defined(__FreeBSD_kernel__)
-    tcc_define_symbol(s, "__FreeBSD_kernel__", NULL);
-# endif
-#endif
-
-    /* TinyCC & gcc defines */
-#if defined TCC_TARGET_PE && defined TCC_TARGET_X86_64
-    tcc_define_symbol(s, "__SIZE_TYPE__", "unsigned long long");
-    tcc_define_symbol(s, "__PTRDIFF_TYPE__", "long long");
-#else
-    tcc_define_symbol(s, "__SIZE_TYPE__", "unsigned long");
-    tcc_define_symbol(s, "__PTRDIFF_TYPE__", "long");
-#endif
-
-#ifdef TCC_TARGET_PE
-    tcc_define_symbol(s, "__WCHAR_TYPE__", "unsigned short");
-#else
-    tcc_define_symbol(s, "__WCHAR_TYPE__", "int");
-#endif
-
-#ifndef TCC_TARGET_PE
-    /* glibc defines */
-    tcc_define_symbol(s, "__REDIRECT(name, proto, alias)", "name proto __asm__ (#alias)");
-    tcc_define_symbol(s, "__REDIRECT_NTH(name, proto, alias)", "name proto __asm__ (#alias) __THROW");
-    /* paths for crt objects */
-    tcc_split_path(s, (void ***)&s->crt_paths, &s->nb_crt_paths, CONFIG_TCC_CRTPREFIX);
-#endif
+	
+	/* OpenCL */
+    tcc_define_symbol(s, "CL_VERSION_1_0", "100");
+    tcc_define_symbol(s, "CL_VERSION_1_1", "110");
+    tcc_define_symbol(s, "CL_VERSION_1_2", "120");
+    tcc_define_symbol(s, "__OPENCL_VERSION__", "120");
+    tcc_define_symbol(s, "__IMAGE_SUPPORT__", "1");
 
     /* no section zero */
     dynarray_add((void ***)&s->sections, &s->nb_sections, NULL);
@@ -569,15 +508,6 @@ LIBTCCAPI void tcc_delete(TCCState *s1)
     tcc_free(s1->fini_symbol);
     dynarray_reset(&s1->files, &s1->nb_files);
     dynarray_reset(&s1->target_deps, &s1->nb_target_deps);
-
-#ifdef TCC_IS_NATIVE
-# ifdef HAVE_SELINUX
-    munmap (s1->write_mem, s1->mem_size);
-    munmap (s1->runtime_mem, s1->mem_size);    
-# else
-    tcc_free(s1->runtime_mem);
-# endif
-#endif
 
     tcc_free(s1);
 }
@@ -718,12 +648,6 @@ static const TCCOption tcc_options[] = {
     { "B", TCC_OPTION_B, TCC_OPTION_HAS_ARG },
     { "l", TCC_OPTION_l, TCC_OPTION_HAS_ARG | TCC_OPTION_NOSEP },
     { "bench", TCC_OPTION_bench, 0 },
-#ifdef CONFIG_TCC_BACKTRACE
-    { "bt", TCC_OPTION_bt, TCC_OPTION_HAS_ARG },
-#endif
-#ifdef CONFIG_TCC_BCHECK
-    { "b", TCC_OPTION_b, 0 },
-#endif
     { "g", TCC_OPTION_g, TCC_OPTION_HAS_ARG | TCC_OPTION_NOSEP },
     { "c", TCC_OPTION_c, 0 },
     { "static", TCC_OPTION_static, 0 },

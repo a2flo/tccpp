@@ -57,12 +57,6 @@ static void help(void)
            "  -Wl,-opt[=val]  set linker option (see manual)\n"
            "Debugger options:\n"
            "  -g          generate runtime debug info\n"
-#ifdef CONFIG_TCC_BCHECK
-           "  -b          compile with built-in memory and bounds checker (implies -g)\n"
-#endif
-#ifdef CONFIG_TCC_BACKTRACE
-           "  -bt N       show N callers in stack traces\n"
-#endif
            "Misc options:\n"
            "  -nostdinc   do not use standard system include paths\n"
            "  -nostdlib   do not link with standard crt and libraries\n"
@@ -84,32 +78,7 @@ static void display_info(TCCState *s, int what)
 {
     switch (what) {
     case 0:
-        printf("tcc version %s ("
-#ifdef TCC_TARGET_I386
-        "i386"
-# ifdef TCC_TARGET_PE
-        " Win32"
-# endif
-#elif defined TCC_TARGET_X86_64
-        "x86-64"
-# ifdef TCC_TARGET_PE
-        " Win64"
-# endif
-#elif defined TCC_TARGET_ARM
-        "ARM"
-# ifdef TCC_ARM_HARDFLOAT
-        " Hard Float"
-# endif
-# ifdef TCC_TARGET_PE
-        " WinCE"
-# endif
-#endif
-#ifndef TCC_TARGET_PE
-# ifdef __linux
-        " Linux"
-# endif
-#endif
-        ")\n", TCC_VERSION);
+        printf("tcc version %s\n", TCC_VERSION);
         break;
     case 1:
         printf("install: %s/\n", s->tcc_lib_path);
@@ -117,7 +86,6 @@ static void display_info(TCCState *s, int what)
         print_paths("crt", s->crt_paths, s->nb_crt_paths);
         print_paths("libraries", s->library_paths, s->nb_library_paths);
         print_paths("include", s->sysinclude_paths, s->nb_sysinclude_paths);
-        printf("elfinterp:\n  %s\n",  CONFIG_TCC_ELFINTERP);
         break;
     }
 }
@@ -166,12 +134,8 @@ int main(int argc, char **argv)
 
     if (0 == ret) {
         if (s->output_type == TCC_OUTPUT_MEMORY) {
-#ifdef TCC_IS_NATIVE
-            ret = tcc_run(s, argc - 1 - optind, argv + 1 + optind);
-#else
-            tcc_error_noabort("-run is not available in a cross compiler");
+            tcc_error_noabort("-run is not available");
             ret = 1;
-#endif
         }
     }
 

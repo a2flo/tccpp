@@ -60,10 +60,6 @@ LIBTCCAPI int tcc_add_file(TCCState *s, const char *filename);
 #define TCC_OUTPUT_OBJ      3 /* object file */
 #define TCC_OUTPUT_PREPROCESS 4 /* only preprocess (used internally) */
 
-/* link and run main() function and return its value. DO NOT call
-   tcc_relocate() before. */
-LIBTCCAPI int tcc_run(TCCState *s, int argc, char **argv);
-
 /* do all relocations (needed before using tcc_get_symbol()) */
 LIBTCCAPI int tcc_relocate(TCCState *s1, void *ptr);
 /* possible values for 'ptr':

@@ -32,14 +32,6 @@ ST_DATA int rsym, anon_sym, ind, loc;
 
 ST_DATA Section *text_section, *data_section, *bss_section; /* predefined sections */
 ST_DATA Section *cur_text_section; /* current section where function code is generated */
-#ifdef CONFIG_TCC_ASM
-ST_DATA Section *last_text_section; /* to handle .previous asm directive */
-#endif
-#ifdef CONFIG_TCC_BCHECK
-/* bound check related sections */
-ST_DATA Section *bounds_section; /* contains global data bound description */
-ST_DATA Section *lbounds_section; /* contains local data bound description */
-#endif
 /* symbol sections */
 ST_DATA Section *symtab_section, *strtab_section;
 /* debug sections */
@@ -291,34 +283,6 @@ static void gaddrof(void)
 
 }
 
-#ifdef TCC_TARGET_ARM
-/* expand long long on stack */
-ST_FUNC void lexpand_nr(void)
-{
-    int u,v;
-
-    u = vtop->type.t & VT_UNSIGNED;
-    vdup();
-    vtop->r2 = VT_CONST;
-    vtop->type.t = VT_INT | u;
-    v=vtop[-1].r & (VT_VALMASK | VT_LVAL);
-    if (v == VT_CONST) {
-      vtop[-1].c.ui = vtop->c.ull;
-      vtop->c.ui = vtop->c.ull >> 32;
-      vtop->r = VT_CONST;
-    } else if (v == (VT_LVAL|VT_CONST) || v == (VT_LVAL|VT_LOCAL)) {
-      vtop->c.ui += 4;
-      vtop->r = vtop[-1].r;
-    } else if (v > VT_CONST) {
-      vtop--;
-      lexpand();
-    } else
-      vtop->r = vtop[-1].r2;
-    vtop[-1].r2 = VT_CONST;
-    vtop[-1].type.t = VT_INT | u;
-}
-#endif
-
 /* rotate n first stack elements to the bottom 
    I1 ... In -> I2 ... In I1 [top is right]
 */
@@ -458,10 +422,6 @@ static void gen_cast(CType *type)
                     vtop->c.ll = vtop->c.ull;
                 else if (sbt & VT_UNSIGNED)
                     vtop->c.ll = vtop->c.ui;
-#ifdef TCC_TARGET_X86_64
-                else if (sbt == VT_PTR)
-                    ;
-#endif
                 else if (sbt != VT_LLONG)
                     vtop->c.ll = vtop->c.i;
 
@@ -645,10 +605,6 @@ ST_FUNC void indir(void)
         && (vtop->type.t & VT_BTYPE) != VT_FUNC) {
         vtop->r |= lvalue_type(vtop->type.t);
         /* if bound checking, the referenced pointer must be checked */
-#ifdef CONFIG_TCC_BCHECK
-        if (tcc_state->do_bounds_check)
-            vtop->r |= VT_MUSTBOUND;
-#endif
     }
 }
 
@@ -845,11 +801,6 @@ ST_FUNC void unary(void)
             /* an array is never an lvalue */
             if (!(vtop->type.t & VT_ARRAY)) {
                 vtop->r |= lvalue_type(vtop->type.t);
-#ifdef CONFIG_TCC_BCHECK
-                /* if bound checking, the referenced pointer must be checked */
-                if (tcc_state->do_bounds_check)
-                    vtop->r |= VT_MUSTBOUND;
-#endif
             }
             next();
         } else if (tok == '[') {
