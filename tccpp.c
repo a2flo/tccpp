@@ -1916,6 +1916,7 @@ static inline void next_nomacro1(void)
     case '\r':
         p++;
         goto redo_no_start;
+	case '\0':
     case '\\':
         /* first look if it is in fact an end of buffer */
         if (p >= file->buf_end) {
