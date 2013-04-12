@@ -605,7 +605,6 @@ PUB_FUNC int tcc_parse_args(TCCState *s, int argc, const char **argv)
 {
     const TCCOption *popt;
     const char *optarg_, *r;
-    int run = 0;
     int optind_ = 0;
 	
 	s->warn_none = 1;
@@ -615,11 +614,6 @@ PUB_FUNC int tcc_parse_args(TCCState *s, int argc, const char **argv)
         if (r[0] != '-' || r[1] == '\0') {
             /* add a new file */
             dynarray_add((void ***)&s->files, &s->nb_files, tcc_strdup(r));
-            if (run) {
-                optind_--;
-                /* argv[0] will be this file */
-                break;
-            }
             continue;
         }
 

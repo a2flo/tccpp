@@ -71,9 +71,6 @@ typedef unsigned long long int  uint64_t;
 
 #include "libtcc.h"
 
-/* only native compiler supports -run */
-#define TCC_IS_NATIVE
-
 //
 #if defined(__clang__) || defined(__GNUC__)
 #define tcc_unused __attribute__((unused))
@@ -787,6 +784,11 @@ ST_FUNC void preprocess_new(void);
 ST_FUNC int tcc_preprocess(TCCState *s1);
 ST_FUNC void skip(int c);
 ST_FUNC void expect(const char *msg);
+
+/* input_buf_ptr must be \0 terminated! */
+ST_FUNC int tcc_in_memory_preprocess(TCCState *s1,
+									 const uint8_t* input_buf_ptr, const size_t input_length,
+									 void (*output_write_func)(const char* str));
 
 /* ------------ tccgen.c ------------ */
 

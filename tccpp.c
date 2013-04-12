@@ -2919,7 +2919,7 @@ print_line:
                   : ""
                   ;
                 iptr = iptr_new;
-                fprintf(s1->ppfp, "# %d \"%s\"%s\n", file->line_num, file->filename, s);
+                //fprintf(s1->ppfp, "# %d \"%s\"%s\n", file->line_num, file->filename, s);
             } else {
                 while (d)
                     fputs("\n", s1->ppfp), --d;
@@ -2932,6 +2932,81 @@ print_line:
         fputs(get_tok_str(tok, &tokc), s1->ppfp);
     }
     free_defines(define_start);
+    return 0;
+}
+
+/* in-memory preprocess */
+ST_FUNC int tcc_in_memory_preprocess(TCCState *s1,
+									 const uint8_t* input_buf_ptr, const size_t input_length,
+									 void (*output_write_func)(const char* str))
+{
+	// file setup
+	file->buf_ptr = (uint8_t*)input_buf_ptr;
+	file->buf_end = (uint8_t*)(input_buf_ptr + input_length);
+	file->fd = 0;
+	file->line_num = 1;
+	file->ifndef_macro = 0;
+	file->ifndef_macro_saved = 0;
+	file->ifdef_stack_ptr = s1->ifdef_stack_ptr;
+	file->filename[0] = "M";
+	file->filename[1] = 0;
+	
+	//
+    Sym *define_start;
+	
+    BufferedFile *file_ref, **iptr, **iptr_new;
+    int token_seen, line_ref, d;
+    const char *s;
+	
+    preprocess_init(s1);
+    define_start = define_stack;
+    ch = file->buf_ptr[0];
+    tok_flags = TOK_FLAG_BOL | TOK_FLAG_BOF;
+    parse_flags = PARSE_FLAG_ASM_COMMENTS | PARSE_FLAG_PREPROCESS |
+	PARSE_FLAG_LINEFEED | PARSE_FLAG_SPACES;
+    token_seen = 0;
+    line_ref = 0;
+    file_ref = NULL;
+    iptr = s1->include_stack_ptr;
+	
+    for (;;) {
+        next();
+        if (tok == TOK_EOF) {
+            break;
+        } else if (file != file_ref) {
+            goto print_line;
+        } else if (tok == TOK_LINEFEED) {
+            if (!token_seen)
+                continue;
+            ++line_ref;
+            token_seen = 0;
+        } else if (!token_seen && file != NULL) {
+            d = file->line_num - line_ref;
+            if (file != file_ref || d < 0 || d >= 8) {
+			print_line:
+                iptr_new = s1->include_stack_ptr;
+                s = iptr_new > iptr ? " 1"
+				: iptr_new < iptr ? " 2"
+				: iptr_new > s1->include_stack ? " 3"
+				: ""
+				;
+                iptr = iptr_new;
+            } else {
+                while (d) {
+					(*output_write_func)("\n");
+                    --d;
+				}
+            }
+            line_ref = (file_ref = file)->line_num;
+            token_seen = tok != TOK_LINEFEED;
+            if (!token_seen) {
+                continue;
+			}
+        }
+		(*output_write_func)(get_tok_str(tok, &tokc));
+    }
+    free_defines(define_start);
+	file = file->prev;
     return 0;
 }
 
