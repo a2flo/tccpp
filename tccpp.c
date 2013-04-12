@@ -2939,7 +2939,8 @@ print_line:
 /* in-memory preprocess */
 ST_FUNC int tcc_in_memory_preprocess(TCCState *s1,
 									 const uint8_t* input_buf_ptr, const size_t input_length,
-									 void (*output_write_func)(const char* str))
+									 void* user_state,
+									 void (*output_write_func)(const char* str, void* user_state))
 {
 	// file setup
     BufferedFile* bf = tcc_malloc(sizeof(BufferedFile));
@@ -2996,7 +2997,7 @@ ST_FUNC int tcc_in_memory_preprocess(TCCState *s1,
                 iptr = iptr_new;
             } else {
                 while (d) {
-					(*output_write_func)("\n");
+					(*output_write_func)("\n", user_state);
                     --d;
 				}
             }
@@ -3006,7 +3007,7 @@ ST_FUNC int tcc_in_memory_preprocess(TCCState *s1,
                 continue;
 			}
         }
-		(*output_write_func)(get_tok_str(tok, &tokc));
+		(*output_write_func)(get_tok_str(tok, &tokc), user_state);
     }
     free_defines(define_start);
 	file = file->prev;

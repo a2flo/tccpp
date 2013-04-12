@@ -788,7 +788,8 @@ ST_FUNC void expect(const char *msg);
 /* input_buf_ptr must be \0 terminated! */
 ST_FUNC int tcc_in_memory_preprocess(TCCState *s1,
 									 const uint8_t* input_buf_ptr, const size_t input_length,
-									 void (*output_write_func)(const char* str));
+									 void* user_state,
+									 void (*output_write_func)(const char* str, void* user_state));
 
 /* ------------ tccgen.c ------------ */
 
