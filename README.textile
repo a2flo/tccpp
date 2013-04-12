@@ -23,8 +23,7 @@ After much thought (and attempts to the contrary), I finally decided that I need
 Note: even though this project can still be compiled and used as a standalone binary/preprocessor, its use in that state is relatively limited, since I've removed most of the unnecessary command line and system specific functionality.
 
 *in-memory preprocessing sample (mixed C/C++)*
-<pre>
-string preprocess_code(const int argc, const char** argv, const string& raw_code) {
+<pre><code>string preprocess_code(const int argc, const char** argv, const string& raw_code) {
     // init
     string ret_code = "";
     TCCState* state = tcc_new();
@@ -40,5 +39,4 @@ string preprocess_code(const int argc, const char** argv, const string& raw_code
     // cleanup + return
     tcc_delete(state);
     return ret_code;
-}
-</pre>
+}</code></pre>
