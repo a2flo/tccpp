@@ -19,5 +19,31 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
 *Purpose of this project:*
-After much thought (and attempts to the contrary), I finally decided that I needed a C preprocessor for the "oclraster project":https://github.com/a2flo/oclraster to preprocess user provided OpenCL/oclraster shaders/programs. It will soon be added as a drop-in library.
+After much thought (and attempts to the contrary), I finally decided that I needed a C preprocessor for the "oclraster project":https://github.com/a2flo/oclraster to preprocess user provided OpenCL/oclraster shaders/programs.
 Note: even though this project can still be compiled and used as a standalone binary/preprocessor, its use in that state is relatively limited, since I've removed most of the unnecessary command line and system specific functionality.
+
+*in-memory preprocessing sample (mixed C/C++)*
+<pre>
+<code>
+string preprocess_code(const int argc, const char** argv, const string& raw_code) {
+	// init
+	string ret_code = "";
+	TCCState* state = tcc_new();
+	state->output_type = TCC_OUTPUT_PREPROCESS;
+	
+	// let tcc parse the input arguments
+	tcc_parse_args(state, argc, argv);
+	
+	// in-memory preprocessing
+	const uint8_t* code_input = (const uint8_t*)raw_code.c_str();
+	tcc_in_memory_preprocess(state, code_input, raw_code.length(), &ret_code,
+							 [](const char* str, void* ret) -> void {
+								 *(string*)ret += str;
+							 });
+	
+	// cleanup + return
+	tcc_delete(state);
+	return ret_code;
+}
+</code>
+</pre>
