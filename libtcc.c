@@ -51,8 +51,7 @@ PUB_FUNC char *pstrcpy(char *buf, int buf_size, const char *s)
 /* strcat and truncate. */
 PUB_FUNC char *pstrcat(char *buf, int buf_size, const char *s)
 {
-    int len;
-    len = strlen(buf);
+    int len = (int)strlen(buf);
     if (len < buf_size) 
         pstrcpy(buf + len, buf_size - len, s);
     return buf;
@@ -178,7 +177,7 @@ ST_FUNC void dynarray_reset(void *pp, int *n)
     *(void**)pp = NULL;
 }
 
-static void tcc_split_path(TCCState *s, void ***p_ary, int *p_nb_ary, const char *in)
+static void tcc_split_path(TCCState *s tcc_unused, void ***p_ary, int *p_nb_ary, const char *in)
 {
     const char *p;
     do {
@@ -205,7 +204,7 @@ static void tcc_split_path(TCCState *s, void ***p_ary, int *p_nb_ary, const char
 static void strcat_vprintf(char *buf, int buf_size, const char *fmt, va_list ap)
 {
     int len;
-    len = strlen(buf);
+    len = (int)strlen(buf);
 	
 #if defined(__clang__)
 #pragma clang diagnostic push
@@ -368,8 +367,8 @@ LIBTCCAPI void tcc_define_symbol(TCCState *s1, const char *sym, const char *valu
     /* default value */
     if (!value)
         value = "1";
-    len1 = strlen(sym);
-    len2 = strlen(value);
+    len1 = (int)strlen(sym);
+    len2 = (int)strlen(value);
 
     /* init file structure */
     tcc_open_bf(s1, "<define>", len1 + len2 + 1);
@@ -386,11 +385,11 @@ LIBTCCAPI void tcc_define_symbol(TCCState *s1, const char *sym, const char *valu
 }
 
 /* undefine a preprocessor symbol */
-LIBTCCAPI void tcc_undefine_symbol(TCCState *s1, const char *sym)
+LIBTCCAPI void tcc_undefine_symbol(TCCState *s1 tcc_unused, const char *sym)
 {
     TokenSym *ts;
     Sym *s;
-    ts = tok_alloc(sym, strlen(sym));
+    ts = tok_alloc(sym, (int)strlen(sym));
     s = define_find(ts->tok);
     /* undefine symbol by putting an invalid name */
     if (s)
@@ -601,9 +600,9 @@ static const TCCOption tcc_options[] = {
     { NULL, 0, 0 },
 };
 
-static void parse_option_D(TCCState *s1, const char *optarg)
+static void parse_option_D(TCCState *s1, const char *optarg_)
 {
-    char *sym = tcc_strdup(optarg);
+    char *sym = tcc_strdup(optarg_);
     char *value = strchr(sym, '=');
     if (value)
         *value++ = '\0';
@@ -614,19 +613,19 @@ static void parse_option_D(TCCState *s1, const char *optarg)
 PUB_FUNC int tcc_parse_args(TCCState *s, int argc, const char **argv)
 {
     const TCCOption *popt;
-    const char *optarg, *r;
+    const char *optarg_, *r;
     int run = 0;
-    int optind = 0;
+    int optind_ = 0;
 	
 	s->warn_none = 1;
-    while (optind < argc) {
+    while (optind_ < argc) {
 
-        r = argv[optind++];
+        r = argv[optind_++];
         if (r[0] != '-' || r[1] == '\0') {
             /* add a new file */
             dynarray_add((void ***)&s->files, &s->nb_files, tcc_strdup(r));
             if (run) {
-                optind--;
+                optind_--;
                 /* argv[0] will be this file */
                 break;
             }
@@ -641,12 +640,12 @@ PUB_FUNC int tcc_parse_args(TCCState *s, int argc, const char **argv)
                 tcc_error("invalid option -- '%s'", r);
             if (!strstart(p1, &r1))
                 continue;
-            optarg = r1;
+            optarg_ = r1;
             if (popt->flags & TCC_OPTION_HAS_ARG) {
                 if (*r1 == '\0' && !(popt->flags & TCC_OPTION_NOSEP)) {
-                    if (optind >= argc)
+                    if (optind_ >= argc)
                         tcc_error("argument to '%s' is missing", r);
-                    optarg = argv[optind++];
+                    optarg_ = argv[optind_++];
                 }
             } else if (*r1 != '\0')
                 continue;
@@ -655,17 +654,17 @@ PUB_FUNC int tcc_parse_args(TCCState *s, int argc, const char **argv)
 
         switch(popt->index) {
 			case TCC_OPTION_I:
-				if (tcc_add_include_path(s, optarg) < 0)
+				if (tcc_add_include_path(s, optarg_) < 0)
 					tcc_error("too many include paths");
 				break;
 			case TCC_OPTION_D:
-				parse_option_D(s, optarg);
+				parse_option_D(s, optarg_);
 				break;
 			case TCC_OPTION_U:
-				tcc_undefine_symbol(s, optarg);
+				tcc_undefine_symbol(s, optarg_);
 				break;
 			case TCC_OPTION_v:
-				do ++s->verbose; while (*optarg++ == 'v');
+				do ++s->verbose; while (*optarg_++ == 'v');
 				break;
 			case TCC_OPTION_E:
 				s->output_type = TCC_OUTPUT_PREPROCESS;
@@ -675,7 +674,7 @@ PUB_FUNC int tcc_parse_args(TCCState *s, int argc, const char **argv)
         }
     }
 
-    return optind;
+    return optind_;
 }
 
 LIBTCCAPI int tcc_set_options(TCCState *s, const char *str)
@@ -695,7 +694,7 @@ LIBTCCAPI int tcc_set_options(TCCState *s, const char *str)
         s1 = str;
         while (*str != '\0' && !is_space(*str))
             str++;
-        len = str - s1;
+        len = (int)(str - s1);
         arg = tcc_malloc(len + 1);
         pstrncpy(arg, s1, len);
         dynarray_add((void ***)&argv, &argc, arg);
@@ -705,7 +704,7 @@ LIBTCCAPI int tcc_set_options(TCCState *s, const char *str)
     return ret;
 }
 
-PUB_FUNC void tcc_print_stats(TCCState *s, int64_t total_time)
+PUB_FUNC void tcc_print_stats(TCCState *s tcc_unused, int64_t total_time)
 {
     double tt;
     tt = (double)total_time / 1000000.0;
@@ -740,15 +739,15 @@ static void help(void)
 
 int main(int argc, const char* argv[]) {
     TCCState *s;
-    int ret, optind, i;
+    int ret, optind_, i;
     const char *first_file = NULL;
 	
     s = tcc_new();
     s->output_type = TCC_OUTPUT_EXE;
 	
-    optind = tcc_parse_args(s, argc - 1, argv + 1);
+    optind_ = tcc_parse_args(s, argc - 1, argv + 1);
 	
-    if (optind == 0) {
+    if (optind_ == 0) {
         help();
         return 1;
     }
@@ -756,7 +755,7 @@ int main(int argc, const char* argv[]) {
     if (s->verbose)
         printf("tcc version %s\n", TCC_VERSION);
 	
-    if (s->verbose && optind == 1)
+    if (s->verbose && optind_ == 1)
         return 0;
 	
     if (s->nb_files == 0)

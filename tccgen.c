@@ -207,7 +207,7 @@ static inline void vpushll(long long v)
 }
 
 /* push a reference to a section offset by adding a dummy symbol */
-static void vpush_ref(CType *type, Section *sec, unsigned long offset, unsigned long size)
+static void vpush_ref(CType *type, Section *sec tcc_unused, unsigned long offset tcc_unused, unsigned long size tcc_unused)
 {
     CValue cval;
 
@@ -640,7 +640,7 @@ ST_FUNC void unary(void)
     case TOK___FUNC__:
         {
             /* special function name identifier */
-            int len = strlen(funcname) + 1;
+            int len = (int)strlen(funcname) + 1;
             /* generate char[len] type */
             type.t = VT_BYTE;
             mk_pointer(&type);
@@ -771,7 +771,7 @@ ST_FUNC void unary(void)
                 tcc_error("field not found: %s",  get_tok_str(tok & ~SYM_FIELD, NULL));
             /* add field offset to pointer */
             vtop->type = char_pointer_type; /* change type to 'char *' */
-            vpushi(s->c);
+            vpushi((int)s->c);
             /* change type to field type, and set to lvalue */
             vtop->type = s->type;
             vtop->type.t |= qualifiers;

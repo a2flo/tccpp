@@ -123,13 +123,13 @@ static void cstr_realloc(CString *cstr, int new_size)
 }
 
 /* add a byte */
-ST_FUNC void cstr_ccat(CString *cstr, int ch)
+ST_FUNC void cstr_ccat(CString *cstr, int ch_)
 {
     int size;
     size = cstr->size + 1;
     if (size > cstr->size_allocated)
         cstr_realloc(cstr, size);
-    ((unsigned char *)cstr->data)[size - 1] = ch;
+    ((unsigned char *)cstr->data)[size - 1] = ch_;
     cstr->size = size;
 }
 
@@ -146,13 +146,13 @@ ST_FUNC void cstr_cat(CString *cstr, const char *str)
 }
 
 /* add a wide char */
-ST_FUNC void cstr_wccat(CString *cstr, int ch)
+ST_FUNC void cstr_wccat(CString *cstr, int ch_)
 {
     int size;
     size = cstr->size + sizeof(nwchar_t);
     if (size > cstr->size_allocated)
         cstr_realloc(cstr, size);
-    *(nwchar_t *)(((unsigned char *)cstr->data) + size - sizeof(nwchar_t)) = ch;
+    *(nwchar_t *)(((unsigned char *)cstr->data) + size - sizeof(nwchar_t)) = ch_;
     cstr->size = size;
 }
 
@@ -367,7 +367,7 @@ static int tcc_peekc_slow(BufferedFile *bf)
 #else
             len = IO_BUF_SIZE;
 #endif
-            len = read(bf->fd, bf->buffer, len);
+            len = (int)read(bf->fd, bf->buffer, len);
             if (len < 0)
                 len = 0;
         } else {
@@ -1211,7 +1211,7 @@ static inline void add_cached_include(TCCState *s1, const char *filename, int if
     s1->cached_includes_hash[h] = s1->nb_cached_includes;
 }
 
-static void pragma_parse(TCCState *s1)
+static void pragma_parse(TCCState *s1 tcc_unused)
 {
     next();
 }
@@ -1291,7 +1291,7 @@ ST_FUNC void preprocess(int is_bof)
                     pstrcat(buf, sizeof(buf), get_tok_str(tok, &tokc));
                     next();
                 }
-                len = strlen(buf);
+                len = (int)strlen(buf);
                 /* check syntax and remove '<>' */
                 if (len < 2 || buf[0] != '<' || buf[len - 1] != '>')
                     goto include_syntax;
@@ -1629,36 +1629,36 @@ static void bn_zero(unsigned int *bn)
    current token */
 static void parse_number(const char *p)
 {
-    int b, t, shift, frac_bits, s, exp_val, ch;
+    int b, t, shift, frac_bits, s, exp_val, ch_;
     char *q;
     unsigned int bn[BN_SIZE];
     double d;
 
     /* number */
     q = token_buf;
-    ch = *p++;
-    t = ch;
-    ch = *p++;
+    ch_ = *p++;
+    t = ch_;
+    ch_ = *p++;
     *q++ = t;
     b = 10;
     if (t == '.') {
         goto float_frac_parse;
     } else if (t == '0') {
-        if (ch == 'x' || ch == 'X') {
+        if (ch_ == 'x' || ch_ == 'X') {
             q--;
-            ch = *p++;
+            ch_ = *p++;
             b = 16;
         }
     }
     /* parse all digits. cannot check octal numbers at this stage
        because of floating point constants */
     while (1) {
-        if (ch >= 'a' && ch <= 'f')
-            t = ch - 'a' + 10;
-        else if (ch >= 'A' && ch <= 'F')
-            t = ch - 'A' + 10;
-        else if (isnum(ch))
-            t = ch - '0';
+        if (ch_ >= 'a' && ch_ <= 'f')
+            t = ch_ - 'a' + 10;
+        else if (ch_ >= 'A' && ch_ <= 'F')
+            t = ch_ - 'A' + 10;
+        else if (isnum(ch_))
+            t = ch_ - '0';
         else
             break;
         if (t >= b)
@@ -1667,12 +1667,12 @@ static void parse_number(const char *p)
         num_too_long:
             tcc_error("number too long");
         }
-        *q++ = ch;
-        ch = *p++;
+        *q++ = ch_;
+        ch_ = *p++;
     }
-    if (ch == '.' ||
-        ((ch == 'e' || ch == 'E') && b == 10) ||
-        ((ch == 'p' || ch == 'P') && (b == 16 || b == 2))) {
+    if (ch_ == '.' ||
+        ((ch_ == 'e' || ch_ == 'E') && b == 10) ||
+        ((ch_ == 'p' || ch_ == 'P') && (b == 16 || b == 2))) {
         if (b != 10) {
             /* NOTE: strtox should support that for hexa numbers, but
                non ISOC99 libcs do not support it, so we prefer to do
@@ -1700,10 +1700,10 @@ static void parse_number(const char *p)
                 bn_lshift(bn, shift, t);
             }
             frac_bits = 0;
-            if (ch == '.') {
-                ch = *p++;
+            if (ch_ == '.') {
+                ch_ = *p++;
                 while (1) {
-                    t = ch;
+                    t = ch_;
                     if (t >= 'a' && t <= 'f') {
                         t = t - 'a' + 10;
                     } else if (t >= 'A' && t <= 'F') {
@@ -1717,25 +1717,25 @@ static void parse_number(const char *p)
                         tcc_error("invalid digit");
                     bn_lshift(bn, shift, t);
                     frac_bits += shift;
-                    ch = *p++;
+                    ch_ = *p++;
                 }
             }
-            if (ch != 'p' && ch != 'P')
+            if (ch_ != 'p' && ch_ != 'P')
                 expect("exponent");
-            ch = *p++;
+            ch_ = *p++;
             s = 1;
             exp_val = 0;
-            if (ch == '+') {
-                ch = *p++;
-            } else if (ch == '-') {
+            if (ch_ == '+') {
+                ch_ = *p++;
+            } else if (ch_ == '-') {
                 s = -1;
-                ch = *p++;
+                ch_ = *p++;
             }
-            if (ch < '0' || ch > '9')
+            if (ch_ < '0' || ch_ > '9')
                 expect("exponent digits");
-            while (ch >= '0' && ch <= '9') {
-                exp_val = exp_val * 10 + ch - '0';
-                ch = *p++;
+            while (ch_ >= '0' && ch_ <= '9') {
+                exp_val = exp_val * 10 + ch_ - '0';
+                ch_ = *p++;
             }
             exp_val = exp_val * s;
             
@@ -1743,9 +1743,9 @@ static void parse_number(const char *p)
             /* XXX: should patch directly float number */
             d = (double)bn[1] * 4294967296.0 + (double)bn[0];
             d = ldexp(d, exp_val - frac_bits);
-            t = toup(ch);
+            t = toup(ch_);
             if (t == 'F') {
-                ch = *p++;
+                ch_ = *p++;
                 tok = TOK_CFLOAT;
                 /* float : should handle overflow */
                 tokc.f = (float)d;
@@ -1755,44 +1755,44 @@ static void parse_number(const char *p)
             }
         } else {
             /* decimal floats */
-            if (ch == '.') {
+            if (ch_ == '.') {
                 if (q >= token_buf + STRING_MAX_SIZE)
                     goto num_too_long;
-                *q++ = ch;
-                ch = *p++;
+                *q++ = ch_;
+                ch_ = *p++;
             float_frac_parse:
-                while (ch >= '0' && ch <= '9') {
+                while (ch_ >= '0' && ch_ <= '9') {
                     if (q >= token_buf + STRING_MAX_SIZE)
                         goto num_too_long;
-                    *q++ = ch;
-                    ch = *p++;
+                    *q++ = ch_;
+                    ch_ = *p++;
                 }
             }
-            if (ch == 'e' || ch == 'E') {
+            if (ch_ == 'e' || ch_ == 'E') {
                 if (q >= token_buf + STRING_MAX_SIZE)
                     goto num_too_long;
-                *q++ = ch;
-                ch = *p++;
-                if (ch == '-' || ch == '+') {
+                *q++ = ch_;
+                ch_ = *p++;
+                if (ch_ == '-' || ch_ == '+') {
                     if (q >= token_buf + STRING_MAX_SIZE)
                         goto num_too_long;
-                    *q++ = ch;
-                    ch = *p++;
+                    *q++ = ch_;
+                    ch_ = *p++;
                 }
-                if (ch < '0' || ch > '9')
+                if (ch_ < '0' || ch_ > '9')
                     expect("exponent digits");
-                while (ch >= '0' && ch <= '9') {
+                while (ch_ >= '0' && ch_ <= '9') {
                     if (q >= token_buf + STRING_MAX_SIZE)
                         goto num_too_long;
-                    *q++ = ch;
-                    ch = *p++;
+                    *q++ = ch_;
+                    ch_ = *p++;
                 }
             }
             *q = '\0';
-            t = toup(ch);
+            t = toup(ch_);
             errno = 0;
             if (t == 'F') {
-                ch = *p++;
+                ch_ = *p++;
                 tok = TOK_CFLOAT;
                 tokc.f = strtof(token_buf, NULL);
             } else {
@@ -1848,7 +1848,7 @@ static void parse_number(const char *p)
         lcount = 0;
         ucount = 0;
         for(;;) {
-            t = toup(ch);
+            t = toup(ch_);
             if (t == 'L') {
                 if (lcount >= 2)
                     tcc_error("three 'l's in integer constant");
@@ -1859,7 +1859,7 @@ static void parse_number(const char *p)
                     else if (tok == TOK_CUINT)
                         tok = TOK_CULLONG;
                 }
-                ch = *p++;
+                ch_ = *p++;
             } else if (t == 'U') {
                 if (ucount >= 1)
                     tcc_error("two 'u's in integer constant");
@@ -1868,17 +1868,17 @@ static void parse_number(const char *p)
                     tok = TOK_CUINT;
                 else if (tok == TOK_CLLONG)
                     tok = TOK_CULLONG;
-                ch = *p++;
+                ch_ = *p++;
             } else {
                 break;
             }
         }
         if (tok == TOK_CINT || tok == TOK_CUINT)
-            tokc.ui = n;
+            tokc.ui = (unsigned int)n;
         else
             tokc.ull = n;
     }
-    if (ch)
+    if (ch_)
         tcc_error("invalid number\n");
 }
 
@@ -2038,7 +2038,7 @@ maybe_newline:
 
             /* fast case : no stray found, so we have the full token
                and we have already hashed it */
-            len = p - p1;
+            len = (int)(p - p1);
             h &= (TOK_HASH_SIZE - 1);
             pts = &hash_ident[h];
             for(;;) {
@@ -2507,23 +2507,23 @@ static int macro_subst_tok(TokenString *tok_str,
             } else {
                 ch = file->buf_ptr[0];
                 while (is_space(ch) || ch == '\n' || ch == '/')
-		  {
-		    if (ch == '/')
-		      {
-			int c;
-			uint8_t *p = file->buf_ptr;
-			PEEKC(c, p);
-			if (c == '*') {
-			    p = parse_comment(p);
-			    file->buf_ptr = p - 1;
-			} else if (c == '/') {
-			    p = parse_line_comment(p);
-			    file->buf_ptr = p - 1;
-			} else
-			  break;
-		      }
-		    cinp();
-		  }
+				{
+					if (ch == '/')
+					{
+						int c;
+						uint8_t *p_ = file->buf_ptr;
+						PEEKC(c, p_);
+						if (c == '*') {
+							p_ = parse_comment(p_);
+							file->buf_ptr = p_ - 1;
+						} else if (c == '/') {
+							p_ = parse_line_comment(p_);
+							file->buf_ptr = p_ - 1;
+						} else
+							break;
+					}
+					cinp();
+				}
                 t = ch;
             }
             if (t != '(') /* no macro subst */
@@ -2872,7 +2872,7 @@ ST_FUNC void preprocess_new(void)
             if (c == '\0')
                 break;
         }
-        tok_alloc(p, r - p - 1);
+        tok_alloc(p, (int)(r - p - 1));
         p = r;
     }
 }

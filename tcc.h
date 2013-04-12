@@ -23,11 +23,6 @@
 
 #define TCC_VERSION "0.9.26-cl-preprocessor"
 
-#ifdef CONFIG_TCCBOOT
-#include "tccboot.h"
-#define CONFIG_TCC_STATIC
-#else
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -65,8 +60,6 @@
 # endif
 #endif
 
-#endif /* !CONFIG_TCCBOOT */
-
 #ifndef O_BINARY
 # define O_BINARY 0
 #endif
@@ -80,6 +73,13 @@ typedef unsigned long long int  uint64_t;
 
 /* only native compiler supports -run */
 #define TCC_IS_NATIVE
+
+//
+#if defined(__clang__) || defined(__GNUC__)
+#define tcc_unused __attribute__((unused))
+#else
+#define tcc_unused
+#endif
 
 /* -------------------------------------------- */
 
