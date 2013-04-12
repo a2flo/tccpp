@@ -2946,7 +2946,7 @@ ST_FUNC int tcc_in_memory_preprocess(TCCState *s1,
 	file = bf;
 	file->buf_ptr = (uint8_t*)input_buf_ptr;
 	file->buf_end = (uint8_t*)(input_buf_ptr + input_length);
-	file->fd = 0;
+	file->fd = -1;
 	file->line_num = 1;
 	file->ifndef_macro = 0;
 	file->ifndef_macro_saved = 0;
