@@ -24,7 +24,6 @@ Note: even though this project can still be compiled and used as a standalone bi
 
 *in-memory preprocessing sample (mixed C/C++)*
 <pre>
-<code>
 string preprocess_code(const int argc, const char** argv, const string& raw_code) {
     // init
     string ret_code = "";
@@ -42,5 +41,4 @@ string preprocess_code(const int argc, const char** argv, const string& raw_code
     tcc_delete(state);
     return ret_code;
 }
-</code>
 </pre>
