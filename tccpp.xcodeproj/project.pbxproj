@@ -197,6 +197,7 @@
 					"-Wnewline-eof",
 					"-Wnon-virtual-dtor",
 					"-Wno-nested-anon-types",
+					"-Wmissing-variable-declarations",
 				);
 			};
 			name = Debug;
@@ -262,6 +263,7 @@
 					"-Wnewline-eof",
 					"-Wnon-virtual-dtor",
 					"-Wno-nested-anon-types",
+					"-Wmissing-variable-declarations",
 				);
 			};
 			name = Release;

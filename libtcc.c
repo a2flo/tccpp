@@ -473,16 +473,7 @@ LIBTCCAPI TCCState *tcc_new(void)
 
 LIBTCCAPI void tcc_delete(TCCState *s1)
 {
-    int i;
-
     tcc_cleanup();
-        
-    /* free any loaded DLLs */
-    for ( i = 0; i < s1->nb_loaded_dlls; i++) {
-        DLLReference *ref = s1->loaded_dlls[i];
-        if ( ref->handle )
-            dlclose(ref->handle);
-    }
     
     /* free loaded dlls array */
     dynarray_reset(&s1->loaded_dlls, &s1->nb_loaded_dlls);

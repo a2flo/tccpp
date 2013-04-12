@@ -679,7 +679,7 @@ static inline int toup(int c)
 
 #define ST_INLN
 #define ST_FUNC
-#define ST_DATA
+#define ST_DATA extern
 
 /* ------------ libtcc.c ------------ */
 
@@ -804,6 +804,7 @@ ST_DATA int nb_sym_pools;
 
 ST_DATA Sym *global_stack;
 ST_DATA Sym *local_stack;
+ST_DATA Sym *scope_stack_bottom;
 ST_DATA Sym *define_stack;
 ST_DATA CType char_pointer_type, func_old_type, int_type, size_type;
 ST_DATA SValue __vstack[1+/*to make bcheck happy*/ VSTACK_SIZE], *vtop;
@@ -844,5 +845,8 @@ ST_FUNC void decl(int l);
 ST_FUNC void vpush(CType *type);
 ST_FUNC void vpush64(int ty, unsigned long long v);
 
+/********************************************************/
+#undef ST_DATA
+#define ST_DATA
 /********************************************************/
 #endif /* _TCC_H */
