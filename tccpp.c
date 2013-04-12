@@ -2941,6 +2941,8 @@ ST_FUNC int tcc_in_memory_preprocess(TCCState *s1,
 									 void (*output_write_func)(const char* str))
 {
 	// file setup
+    BufferedFile* bf = tcc_malloc(sizeof(BufferedFile));
+	file = bf;
 	file->buf_ptr = (uint8_t*)input_buf_ptr;
 	file->buf_end = (uint8_t*)(input_buf_ptr + input_length);
 	file->fd = 0;
@@ -3007,6 +3009,7 @@ ST_FUNC int tcc_in_memory_preprocess(TCCState *s1,
     }
     free_defines(define_start);
 	file = file->prev;
+    tcc_free(bf);
     return 0;
 }
 
