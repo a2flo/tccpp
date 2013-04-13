@@ -254,7 +254,14 @@ static void error1(TCCState *s1, int is_warning, const char *fmt, va_list ap)
 
     if (!s1->error_func) {
         /* default case: stderr */
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
+#endif
         fprintf(stderr, "%s\n", buf);
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
     } else {
         s1->error_func(s1->error_opaque, buf);
     }
@@ -733,7 +740,14 @@ int main(int argc, const char* argv[]) {
         tcc_error("no input files\n");
     
     if (s->output_type == TCC_OUTPUT_PREPROCESS) {
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
+#endif
         s->ppfp = stdout;
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
     }
 	
     /* compile or add each files or library */
