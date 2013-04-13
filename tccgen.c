@@ -223,14 +223,6 @@ ST_FUNC void vset(CType *type, int r, int v)
     vsetc(type, r, &cval);
 }
 
-static void vseti(int r, int v)
-{
-    CType type;
-    type.t = VT_INT;
-    type.ref = 0;
-    vset(&type, r, v);
-}
-
 ST_FUNC void vswap(void)
 {
     SValue tmp;
