@@ -313,6 +313,197 @@ ST_FUNC void vpop(void)
     vtop--;
 }
 
+/* handle integer constant optimizations and various machine
+   independent opt */
+static void gen_opic(int op)
+{
+    int c1, c2, t1, t2, n;
+    SValue *v1, *v2;
+    long long l1, l2;
+    typedef unsigned long long U;
+
+    v1 = vtop - 1;
+    v2 = vtop;
+    t1 = v1->type.t & VT_BTYPE;
+    t2 = v2->type.t & VT_BTYPE;
+
+    if (t1 == VT_LLONG)
+        l1 = v1->c.ll;
+    else if (v1->type.t & VT_UNSIGNED)
+        l1 = v1->c.ui;
+    else
+        l1 = v1->c.i;
+
+    if (t2 == VT_LLONG)
+        l2 = v2->c.ll;
+    else if (v2->type.t & VT_UNSIGNED)
+        l2 = v2->c.ui;
+    else
+        l2 = v2->c.i;
+
+    /* currently, we cannot do computations with forward symbols */
+    c1 = (v1->r & (VT_VALMASK | VT_LVAL | VT_SYM)) == VT_CONST;
+    c2 = (v2->r & (VT_VALMASK | VT_LVAL | VT_SYM)) == VT_CONST;
+    if (c1 && c2) {
+        switch(op) {
+        case '+': l1 += l2; break;
+        case '-': l1 -= l2; break;
+        case '&': l1 &= l2; break;
+        case '^': l1 ^= l2; break;
+        case '|': l1 |= l2; break;
+        case '*': l1 *= l2; break;
+
+        case TOK_PDIV:
+        case '/':
+        case '%':
+        case TOK_UDIV:
+        case TOK_UMOD:
+            /* if division by zero, generate explicit division */
+            if (l2 == 0) {
+                if (const_wanted)
+                    tcc_error("division by zero in constant");
+                goto general_case;
+            }
+            switch(op) {
+            default: l1 /= l2; break;
+            case '%': l1 %= l2; break;
+            case TOK_UDIV: l1 = (U)l1 / l2; break;
+            case TOK_UMOD: l1 = (U)l1 % l2; break;
+            }
+            break;
+        case TOK_SHL: l1 <<= l2; break;
+        case TOK_SHR: l1 = (U)l1 >> l2; break;
+        case TOK_SAR: l1 >>= l2; break;
+            /* tests */
+        case TOK_ULT: l1 = (U)l1 < (U)l2; break;
+        case TOK_UGE: l1 = (U)l1 >= (U)l2; break;
+        case TOK_EQ: l1 = l1 == l2; break;
+        case TOK_NE: l1 = l1 != l2; break;
+        case TOK_ULE: l1 = (U)l1 <= (U)l2; break;
+        case TOK_UGT: l1 = (U)l1 > (U)l2; break;
+        case TOK_LT: l1 = l1 < l2; break;
+        case TOK_GE: l1 = l1 >= l2; break;
+        case TOK_LE: l1 = l1 <= l2; break;
+        case TOK_GT: l1 = l1 > l2; break;
+            /* logical */
+        case TOK_LAND: l1 = l1 && l2; break;
+        case TOK_LOR: l1 = l1 || l2; break;
+        default:
+            goto general_case;
+        }
+        v1->c.ll = l1;
+        vtop--;
+    } else {
+        /* if commutative ops, put c2 as constant */
+        if (c1 && (op == '+' || op == '&' || op == '^' || 
+                   op == '|' || op == '*')) {
+            vswap();
+            c2 = c1; //c = c1, c1 = c2, c2 = c;
+            l2 = l1; //l = l1, l1 = l2, l2 = l;
+        }
+        /* Filter out NOP operations like x*1, x-0, x&-1... */
+        if (c2 && (((op == '*' || op == '/' || op == TOK_UDIV || 
+                     op == TOK_PDIV) && 
+                    l2 == 1) ||
+                   ((op == '+' || op == '-' || op == '|' || op == '^' || 
+                     op == TOK_SHL || op == TOK_SHR || op == TOK_SAR) && 
+                    l2 == 0) ||
+                   (op == '&' && 
+                    l2 == -1))) {
+            /* nothing to do */
+            vtop--;
+        } else if (c2 && (op == '*' || op == TOK_PDIV || op == TOK_UDIV)) {
+            /* try to use shifts instead of muls or divs */
+            if (l2 > 0 && (l2 & (l2 - 1)) == 0) {
+                n = -1;
+                while (l2) {
+                    l2 >>= 1;
+                    n++;
+                }
+                vtop->c.ll = n;
+                if (op == '*')
+                    op = TOK_SHL;
+                else if (op == TOK_PDIV)
+                    op = TOK_SAR;
+                else
+                    op = TOK_SHR;
+            }
+            goto general_case;
+        } else if (c2 && (op == '+' || op == '-') &&
+                   (((vtop[-1].r & (VT_VALMASK | VT_LVAL | VT_SYM)) == (VT_CONST | VT_SYM))
+                    || (vtop[-1].r & (VT_VALMASK | VT_LVAL)) == VT_LOCAL)) {
+            /* symbol + constant case */
+            if (op == '-')
+                l2 = -l2;
+            vtop--;
+            vtop->c.ll += l2;
+        } else {
+        general_case:
+			vtop--;
+        }
+    }
+}
+
+/* generate a floating point operation with constant propagation */
+static void gen_opif(int op)
+{
+    int c1, c2;
+    SValue *v1, *v2;
+    long double f1, f2;
+
+    v1 = vtop - 1;
+    v2 = vtop;
+    /* currently, we cannot do computations with forward symbols */
+    c1 = (v1->r & (VT_VALMASK | VT_LVAL | VT_SYM)) == VT_CONST;
+    c2 = (v2->r & (VT_VALMASK | VT_LVAL | VT_SYM)) == VT_CONST;
+    if (c1 && c2) {
+        if (v1->type.t == VT_FLOAT) {
+            f1 = v1->c.f;
+            f2 = v2->c.f;
+        } else if (v1->type.t == VT_DOUBLE) {
+            f1 = v1->c.d;
+            f2 = v2->c.d;
+        } else {
+            f1 = v1->c.ld;
+            f2 = v2->c.ld;
+        }
+
+        /* NOTE: we only do constant propagation if finite number (not
+           NaN or infinity) (ANSI spec) */
+        if (!ieee_finite(f1) || !ieee_finite(f2))
+            goto general_case;
+
+        switch(op) {
+        case '+': f1 += f2; break;
+        case '-': f1 -= f2; break;
+        case '*': f1 *= f2; break;
+        case '/': 
+            if (f2 == 0.0) {
+                if (const_wanted)
+                    tcc_error("division by zero in constant");
+                goto general_case;
+            }
+            f1 /= f2; 
+            break;
+            /* XXX: also handles tests ? */
+        default:
+            goto general_case;
+        }
+        /* XXX: overflow test ? */
+        if (v1->type.t == VT_FLOAT) {
+            v1->c.f = f1;
+        } else if (v1->type.t == VT_DOUBLE) {
+            v1->c.d = f1;
+        } else {
+            v1->c.ld = f1;
+        }
+        vtop--;
+    } else {
+    general_case:
+        vtop--;
+    }
+}
+
 static inline int is_null_pointer(SValue *p)
 {
     if ((p->r & (VT_VALMASK | VT_LVAL | VT_SYM)) != VT_CONST)
@@ -328,6 +519,133 @@ static inline int is_integer_btype(int bt)
             bt == VT_INT || bt == VT_LLONG);
 }
 
+/* generic gen_op: handles types problems */
+ST_FUNC void gen_op(int op)
+{
+    int t1, t2, bt1, bt2, t;
+    CType type1;
+
+    t1 = vtop[-1].type.t;
+    t2 = vtop[0].type.t;
+    bt1 = t1 & VT_BTYPE;
+    bt2 = t2 & VT_BTYPE;
+        
+    if (bt1 == VT_PTR || bt2 == VT_PTR) {
+        /* at least one operand is a pointer */
+        /* relationnal op: must be both pointers */
+        if (op >= TOK_ULT && op <= TOK_LOR) {
+            //check_comparison_pointer_types(vtop - 1, vtop, op);
+            /* pointers are handled are unsigned */
+            t = VT_INT | VT_UNSIGNED;
+            goto std_op;
+        }
+        /* if both pointers, then it must be the '-' op */
+        if (bt1 == VT_PTR && bt2 == VT_PTR) {
+            if (op != '-')
+                tcc_error("cannot use pointers here");
+            //check_comparison_pointer_types(vtop - 1, vtop, op);
+            /* XXX: check that types are compatible */
+            vrott(3);
+            gen_opic(op);
+            /* set to integer type */
+            vtop->type.t = VT_INT; 
+            vswap();
+            gen_op(TOK_PDIV);
+        } else {
+            /* exactly one pointer : must be '+' or '-'. */
+            if (op != '-' && op != '+')
+                tcc_error("cannot use pointers here");
+            /* Put pointer as first operand */
+            if (bt2 == VT_PTR) {
+                vswap();
+                swap(&t1, &t2);
+            }
+            type1 = vtop[-1].type;
+            type1.t &= ~VT_ARRAY;
+            gen_op('*');
+            {
+                gen_opic(op);
+            }
+            /* put again type if gen_opic() swaped operands */
+            vtop->type = type1;
+        }
+    } else if (is_float(bt1) || is_float(bt2)) {
+        /* compute bigger type and do implicit casts */
+        if (bt1 == VT_LDOUBLE || bt2 == VT_LDOUBLE) {
+            t = VT_LDOUBLE;
+        } else if (bt1 == VT_DOUBLE || bt2 == VT_DOUBLE) {
+            t = VT_DOUBLE;
+        } else {
+            t = VT_FLOAT;
+        }
+        /* floats can only be used for a few operations */
+        if (op != '+' && op != '-' && op != '*' && op != '/' &&
+            (op < TOK_ULT || op > TOK_GT))
+            tcc_error("invalid operands for binary operation");
+        goto std_op;
+    } else if (op == TOK_SHR || op == TOK_SAR || op == TOK_SHL) {
+        t = bt1 == VT_LLONG ? VT_LLONG : VT_INT;
+        if ((t1 & (VT_BTYPE | VT_UNSIGNED)) == (t | VT_UNSIGNED))
+          t |= VT_UNSIGNED;
+        goto std_op;
+    } else if (bt1 == VT_LLONG || bt2 == VT_LLONG) {
+        /* cast to biggest op */
+        t = VT_LLONG;
+        /* convert to unsigned if it does not fit in a long long */
+        if ((t1 & (VT_BTYPE | VT_UNSIGNED)) == (VT_LLONG | VT_UNSIGNED) ||
+            (t2 & (VT_BTYPE | VT_UNSIGNED)) == (VT_LLONG | VT_UNSIGNED))
+            t |= VT_UNSIGNED;
+        goto std_op;
+    } else if (bt1 == VT_STRUCT || bt2 == VT_STRUCT) {
+        tcc_error("comparison of struct");
+    } else {
+        /* integer operations */
+        t = VT_INT;
+        /* convert to unsigned if it does not fit in an integer */
+        if ((t1 & (VT_BTYPE | VT_UNSIGNED)) == (VT_INT | VT_UNSIGNED) ||
+            (t2 & (VT_BTYPE | VT_UNSIGNED)) == (VT_INT | VT_UNSIGNED))
+            t |= VT_UNSIGNED;
+    std_op:
+        /* XXX: currently, some unsigned operations are explicit, so
+           we modify them here */
+        if (t & VT_UNSIGNED) {
+            if (op == TOK_SAR)
+                op = TOK_SHR;
+            else if (op == '/')
+                op = TOK_UDIV;
+            else if (op == '%')
+                op = TOK_UMOD;
+            else if (op == TOK_LT)
+                op = TOK_ULT;
+            else if (op == TOK_GT)
+                op = TOK_UGT;
+            else if (op == TOK_LE)
+                op = TOK_ULE;
+            else if (op == TOK_GE)
+                op = TOK_UGE;
+        }
+        vswap();
+        type1.t = t;
+        gen_cast(&type1);
+        vswap();
+        /* special case for shifts and long long: we keep the shift as
+           an integer */
+        if (op == TOK_SHR || op == TOK_SAR || op == TOK_SHL)
+            type1.t = VT_INT;
+        gen_cast(&type1);
+        if (is_float(t))
+            gen_opif(op);
+        else
+            gen_opic(op);
+        if (op >= TOK_ULT && op <= TOK_GT) {
+            /* relationnal op: the result is an int */
+            vtop->type.t = VT_INT;
+        } else {
+            vtop->type.t = t;
+        }
+    }
+}
+
 /* force char or short cast */
 static void force_charshort_cast(int t)
 {
@@ -340,14 +658,17 @@ static void force_charshort_cast(int t)
         bits = 16;
     if (t & VT_UNSIGNED) {
         vpushi((1 << bits) - 1);
+        gen_op('&');
     } else {
         bits = 32 - bits;
         vpushi(bits);
+        gen_op(TOK_SHL);
         /* result must be signed or the SAR is converted to an SHL
            This was not the case when "t" was a signed short
            and the last value on the stack was an unsigned int */
         vtop->type.t &= ~VT_UNSIGNED;
         vpushi(bits);
+        gen_op(TOK_SAR);
     }
 }
 
@@ -508,8 +829,10 @@ ST_FUNC void vstore(void)
             } else {
                 vpushi((1 << bit_size) - 1);
             }
+            gen_op('&');
         }
         vpushi(bit_pos);
+        gen_op(TOK_SHL);
         /* load destination, mask and or with source */
         vswap();
         if((ft & VT_BTYPE) == VT_LLONG) {
@@ -517,6 +840,8 @@ ST_FUNC void vstore(void)
         } else {
             vpushi(~(((1 << bit_size) - 1) << bit_pos));
         }
+        gen_op('&');
+        gen_op('|');
         /* store result */
         vstore();
 
@@ -541,6 +866,7 @@ ST_FUNC void inc(int post, int c)
     }
     /* add constant */
     vpushi(c - TOK_MID); 
+    gen_op('+');
     vstore(); /* store value */
     if (post)
         vpop(); /* if post op, return saved value */
@@ -696,6 +1022,7 @@ ST_FUNC void unary(void)
         next();
         unary();
         vpushi(-1);
+        gen_op('^');
         break;
     case '+':
         next();
@@ -704,6 +1031,7 @@ ST_FUNC void unary(void)
         if ((vtop->type.t & VT_BTYPE) == VT_PTR)
             tcc_error("pointer not accepted for unary plus");
         vpushi(0);
+        gen_op('+');
         break;
     case TOK_INC:
     case TOK_DEC:
@@ -716,6 +1044,7 @@ ST_FUNC void unary(void)
         next();
         vpushi(0);
         unary();
+        gen_op('-');
         break;
     case TOK_LAND:
 		goto tok_identifier;
@@ -772,6 +1101,7 @@ ST_FUNC void unary(void)
             /* add field offset to pointer */
             vtop->type = char_pointer_type; /* change type to 'char *' */
             vpushi((int)s->c);
+            gen_op('+');
             /* change type to field type, and set to lvalue */
             vtop->type = s->type;
             vtop->type.t |= qualifiers;
@@ -783,6 +1113,7 @@ ST_FUNC void unary(void)
         } else if (tok == '[') {
             next();
             gexpr();
+            gen_op('+');
             indir();
             skip(']');
         } else if (tok == '(') {
@@ -804,47 +1135,67 @@ ST_FUNC void unary(void)
 
 ST_FUNC void expr_prod(void)
 {
+    int t;
+
     unary();
     while (tok == '*' || tok == '/' || tok == '%') {
+        t = tok;
         next();
         unary();
+        gen_op(t);
     }
 }
 
 ST_FUNC void expr_sum(void)
 {
+    int t;
+
     expr_prod();
     while (tok == '+' || tok == '-') {
+        t = tok;
         next();
         expr_prod();
+        gen_op(t);
     }
 }
 
 static void expr_shift(void)
 {
+    int t;
+
     expr_sum();
     while (tok == TOK_SHL || tok == TOK_SAR) {
+        t = tok;
         next();
         expr_sum();
+        gen_op(t);
     }
 }
 
 static void expr_cmp(void)
 {
+    int t;
+
     expr_shift();
     while ((tok >= TOK_ULE && tok <= TOK_GT) ||
            tok == TOK_ULT || tok == TOK_UGE) {
+        t = tok;
         next();
         expr_shift();
+        gen_op(t);
     }
 }
 
 static void expr_cmpeq(void)
 {
+    int t;
+
     expr_cmp();
     while (tok == TOK_EQ || tok == TOK_NE) {
+        t = tok;
         next();
         expr_cmp();
+        gen_op(t);
     }
 }
 
@@ -854,6 +1205,7 @@ static void expr_and(void)
     while (tok == '&') {
         next();
         expr_cmpeq();
+        gen_op('&');
     }
 }
 
@@ -863,6 +1215,7 @@ static void expr_xor(void)
     while (tok == '^') {
         next();
         expr_and();
+        gen_op('^');
     }
 }
 
@@ -872,6 +1225,7 @@ static void expr_or(void)
     while (tok == '|') {
         next();
         expr_xor();
+        gen_op('|');
     }
 }
 
@@ -882,6 +1236,7 @@ static void expr_land_const(void)
     while (tok == TOK_LAND) {
         next();
         expr_or();
+        gen_op(TOK_LAND);
     }
 }
 
@@ -892,20 +1247,17 @@ static void expr_lor_const(void)
     while (tok == TOK_LOR) {
         next();
         expr_land_const();
+        gen_op(TOK_LOR);
     }
 }
 
 /* only used if non constant */
 static void expr_land(void)
 {
-    int t;
-
     expr_or();
     if (tok == TOK_LAND) {
-        t = 0;
         for(;;) {
             if (tok != TOK_LAND) {
-                vseti(VT_JMPI, t);
                 break;
             }
             next();
@@ -916,14 +1268,10 @@ static void expr_land(void)
 
 static void expr_lor(void)
 {
-    int t;
-
     expr_land();
     if (tok == TOK_LOR) {
-        t = 0;
         for(;;) {
             if (tok != TOK_LOR) {
-                vseti(VT_JMP, t);
                 break;
             }
             next();
@@ -1053,6 +1401,7 @@ static void expr_eq(void)
         } else {
             vdup();
             expr_eq();
+            gen_op(t & 0x7f);
         }
         vstore();
     }

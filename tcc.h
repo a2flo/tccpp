@@ -833,6 +833,7 @@ ST_FUNC void vrott(int n);
 ST_FUNC void vrotb(int n);
 ST_FUNC void vpushv(SValue *v);
 ST_FUNC void vpop(void);
+ST_FUNC void gen_op(int op);
 ST_FUNC void mk_pointer(CType *type);
 ST_FUNC void vstore(void);
 ST_FUNC void inc(int post, int c);
