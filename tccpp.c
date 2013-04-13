@@ -2158,7 +2158,7 @@ maybe_newline:
                 if (tokcstr.size > 2 * char_size)
                     tcc_warning("multi-character character constant");
                 if (!is_long) {
-                    tokc.i = *(int8_t *)tokcstr.data;
+                    tokc.i = *(char *)tokcstr.data;
                     tok = TOK_CCHAR;
                 } else {
                     tokc.i = *(nwchar_t *)tokcstr.data;

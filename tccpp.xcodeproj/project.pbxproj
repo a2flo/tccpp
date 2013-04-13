@@ -20,6 +20,8 @@
 		5C7CB6D31717282A00C6A3D7 /* libtcc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = libtcc.c; sourceTree = SOURCE_ROOT; };
 		5C7CB6D51717282A00C6A3D7 /* tccgen.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tccgen.c; sourceTree = SOURCE_ROOT; };
 		5C7CB6D61717282A00C6A3D7 /* tccpp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tccpp.c; sourceTree = SOURCE_ROOT; };
+		5CF5F3E11719BA620007C22C /* premake.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = premake.sh; sourceTree = "<group>"; };
+		5CF5F3E21719BA620007C22C /* premake4.lua */ = {isa = PBXFileReference; lastKnownFileType = text; path = premake4.lua; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -37,6 +39,8 @@
 			isa = PBXGroup;
 			children = (
 				5C4ACFE5171760BA00575953 /* README.textile */,
+				5CF5F3E11719BA620007C22C /* premake.sh */,
+				5CF5F3E21719BA620007C22C /* premake4.lua */,
 			);
 			name = misc;
 			sourceTree = "<group>";

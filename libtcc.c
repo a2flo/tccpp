@@ -689,20 +689,6 @@ LIBTCCAPI int tcc_set_options(TCCState *s, const char *str)
     return ret;
 }
 
-PUB_FUNC void tcc_print_stats(TCCState *s tcc_unused, int64_t total_time)
-{
-    double tt;
-    tt = (double)total_time / 1000000.0;
-    if (tt < 0.001)
-        tt = 0.001;
-    if (total_bytes < 1)
-        total_bytes = 1;
-    printf("%d idents, %d lines, %d bytes, %0.3f s, %d lines/s, %0.1f MB/s\n", 
-           tok_ident - TOK_IDENT, total_lines, total_bytes,
-           tt, (int)(total_lines / tt),
-           total_bytes / tt / 1000000.0);
-}
-
 /********************************************************/
 /* standalone binary */
 
