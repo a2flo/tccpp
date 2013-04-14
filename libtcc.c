@@ -24,9 +24,6 @@
 /********************************************************/
 /* global variables */
 
-/* XXX: get rid of this ASAP */
-ST_DATA struct TCCState *tcc_state;
-
 /********************************************************/
 /* copy a string and truncate it. */
 PUB_FUNC char *pstrcpy(char *buf, int buf_size, const char *s)
@@ -87,12 +84,6 @@ PUB_FUNC char *tcc_fileextension (const char *name)
 /********************************************************/
 /* memory management */
 
-#ifdef MEM_DEBUG
-ST_DATA int mem_cur_size;
-ST_DATA int mem_max_size;
-unsigned malloc_usable_size(void*);
-#endif
-
 PUB_FUNC void tcc_free(void *ptr)
 {
     free(ptr);
@@ -114,18 +105,9 @@ PUB_FUNC void *tcc_mallocz(unsigned long size)
 PUB_FUNC void *tcc_realloc(void *ptr, unsigned long size)
 {
     void *ptr1;
-#ifdef MEM_DEBUG
-    mem_cur_size -= malloc_usable_size(ptr);
-#endif
     ptr1 = realloc(ptr, size);
     if (!ptr1 && size)
         tcc_error("memory full");
-#ifdef MEM_DEBUG
-    /* NOTE: count not correct if alloc error, but not critical */
-    mem_cur_size += malloc_usable_size(ptr1);
-    if (mem_cur_size > mem_max_size)
-        mem_max_size = mem_cur_size;
-#endif
     return ptr1;
 }
 
@@ -139,9 +121,6 @@ PUB_FUNC char *tcc_strdup(const char *str)
 
 PUB_FUNC void tcc_memstats(void)
 {
-#ifdef MEM_DEBUG
-    printf("memory: %d bytes, max = %d bytes\n", mem_cur_size, mem_max_size);
-#endif
 }
 
 /********************************************************/
@@ -227,12 +206,14 @@ static void strcat_printf(char *buf, int buf_size, const char *fmt, ...)
 static void error1(TCCState *s1, int is_warning, const char *fmt, va_list ap)
 {
     char buf[2048];
-    BufferedFile **pf, *f;
+    BufferedFile **pf, *f = NULL;
     
     buf[0] = '\0';
     /* use upper file if inline ":asm:" or token ":paste:" */
-    for (f = file; f && f->filename[0] == ':'; f = f->prev);
-    if (f) {
+	if(s1 != NULL) {
+		for (f = s1->file; f && f->filename[0] == ':'; f = f->prev);
+	}
+    if (f && s1) {
         for(pf = s1->include_stack; pf < s1->include_stack_ptr; pf++)
             strcat_printf(buf, sizeof(buf), "In file included from %s:%d:\n",
                 (*pf)->filename, (*pf)->line_num);
@@ -252,7 +233,7 @@ static void error1(TCCState *s1, int is_warning, const char *fmt, va_list ap)
         strcat_printf(buf, sizeof(buf), "error: ");
     strcat_vprintf(buf, sizeof(buf), fmt, ap);
 
-    if (!s1->error_func) {
+    if (s1 == NULL || !s1->error_func) {
         /* default case: stderr */
 #if defined(__clang__)
 #pragma clang diagnostic push
@@ -265,8 +246,9 @@ static void error1(TCCState *s1, int is_warning, const char *fmt, va_list ap)
     } else {
         s1->error_func(s1->error_opaque, buf);
     }
-    if (!is_warning || s1->warn_error)
+	if (s1 != NULL && (!is_warning || s1->warn_error)) {
         s1->nb_errors++;
+	}
 }
 
 LIBTCCAPI void tcc_set_error_func(TCCState *s, void *error_opaque,
@@ -277,9 +259,8 @@ LIBTCCAPI void tcc_set_error_func(TCCState *s, void *error_opaque,
 }
 
 /* error without aborting current compilation */
-PUB_FUNC void tcc_error_noabort(const char *fmt, ...)
+PUB_FUNC void tcc_error_noabort(TCCState *s1, const char *fmt, ...)
 {
-    TCCState *s1 = tcc_state;
     va_list ap;
 
     va_start(ap, fmt);
@@ -289,24 +270,18 @@ PUB_FUNC void tcc_error_noabort(const char *fmt, ...)
 
 PUB_FUNC void __attribute__((noreturn)) tcc_error(const char *fmt, ...)
 {
-    TCCState *s1 = tcc_state;
     va_list ap;
 
     va_start(ap, fmt);
-    error1(s1, 0, fmt, ap);
+    error1(NULL, 0, fmt, ap);
     va_end(ap);
-    /* better than nothing: in some cases, we accept to handle errors */
-    if (s1->error_set_jmp_enabled) {
-        longjmp(s1->error_jmp_buf, 1);
-    } else {
-        /* XXX: eliminate this someday */
-        exit(1);
-    }
+	
+	/* XXX: eliminate this someday */
+	exit(1);
 }
 
-PUB_FUNC void tcc_warning(const char *fmt, ...)
+PUB_FUNC void tcc_warning(TCCState *s1, const char *fmt, ...)
 {
-    TCCState *s1 = tcc_state;
     va_list ap;
 
     if (s1->warn_none)
@@ -334,18 +309,17 @@ ST_FUNC void tcc_open_bf(TCCState *s1, const char *filename, int initlen)
     bf->ifndef_macro = 0;
     bf->ifdef_stack_ptr = s1->ifdef_stack_ptr;
     bf->fd = -1;
-    bf->prev = file;
-    file = bf;
+    bf->prev = s1->file;
+    s1->file = bf;
 }
 
-ST_FUNC void tcc_close(void)
+ST_FUNC void tcc_close(TCCState *s1)
 {
-    BufferedFile *bf = file;
+    BufferedFile *bf = s1->file;
     if (bf->fd > 0) {
         close(bf->fd);
-        total_lines += bf->line_num;
     }
-    file = bf->prev;
+    s1->file = bf->prev;
     tcc_free(bf);
 }
 
@@ -363,7 +337,7 @@ ST_FUNC int tcc_open(TCCState *s1, const char *filename)
         return -1;
 
     tcc_open_bf(s1, filename, 0);
-    file->fd = fd;
+    s1->file->fd = fd;
     return fd;
 }
 
@@ -379,79 +353,74 @@ LIBTCCAPI void tcc_define_symbol(TCCState *s1, const char *sym, const char *valu
 
     /* init file structure */
     tcc_open_bf(s1, "<define>", len1 + len2 + 1);
-    memcpy(file->buffer, sym, len1);
-    file->buffer[len1] = ' ';
-    memcpy(file->buffer + len1 + 1, value, len2);
+    memcpy(s1->file->buffer, sym, len1);
+    s1->file->buffer[len1] = ' ';
+    memcpy(s1->file->buffer + len1 + 1, value, len2);
 
     /* parse with define parser */
-    ch = file->buf_ptr[0];
-    next_nomacro();
-    parse_define();
+    s1->ch = s1->file->buf_ptr[0];
+    next_nomacro(s1);
+    parse_define(s1);
 
-    tcc_close();
+    tcc_close(s1);
 }
 
 /* undefine a preprocessor symbol */
-LIBTCCAPI void tcc_undefine_symbol(TCCState *s1 tcc_unused, const char *sym)
+LIBTCCAPI void tcc_undefine_symbol(TCCState *s1, const char *sym)
 {
     TokenSym *ts;
     Sym *s;
-    ts = tok_alloc(sym, (int)strlen(sym));
-    s = define_find(ts->tok);
+    ts = tok_alloc(s1, sym, (int)strlen(sym));
+    s = define_find(s1, ts->tok);
     /* undefine symbol by putting an invalid name */
     if (s)
-        define_undef(s);
+        define_undef(s1, s);
 }
 
 /* cleanup all static data used during compilation */
-static void tcc_cleanup(void)
+static void tcc_cleanup(TCCState *s1)
 {
     int i, n;
-    if (NULL == tcc_state)
-        return;
-    tcc_state = NULL;
+    if(s1 == NULL) return;
 
     /* free -D defines */
-    free_defines(NULL);
+    free_defines(s1, NULL);
 
     /* free tokens */
-    n = tok_ident - TOK_IDENT;
+    n = s1->tok_ident - TOK_IDENT;
     for(i = 0; i < n; i++)
-        tcc_free(table_ident[i]);
-    tcc_free(table_ident);
+        tcc_free(s1->table_ident[i]);
+    tcc_free(s1->table_ident);
 
     /* free sym_pools */
-    dynarray_reset(&sym_pools, &nb_sym_pools);
+    dynarray_reset(&s1->sym_pools, &s1->nb_sym_pools);
     /* string buffer */
-    cstr_free(&tokcstr);
+    cstr_free(&s1->tokcstr);
     /* reset symbol stack */
-    sym_free_first = NULL;
+    s1->sym_free_first = NULL;
     /* cleanup from error/setjmp */
-    macro_ptr = NULL;
+    s1->macro_ptr = NULL;
 }
 
 LIBTCCAPI TCCState *tcc_new(void)
 {
-    TCCState *s;
+    TCCState *s = NULL;
     char buffer[100];
     int a,b,c;
 
-    tcc_cleanup();
+    tcc_cleanup(s);
 
     s = tcc_mallocz(sizeof(TCCState));
-    if (!s)
-        return NULL;
-    tcc_state = s;
     s->output_type = TCC_OUTPUT_MEMORY;
-    preprocess_new();
+    preprocess_new(s);
     s->include_stack_ptr = s->include_stack;
 
     /* we add dummy defines for some special macros to speed up tests
        and to have working defined() */
-    define_push(TOK___LINE__, MACRO_OBJ, NULL, NULL);
-    define_push(TOK___FILE__, MACRO_OBJ, NULL, NULL);
-    define_push(TOK___DATE__, MACRO_OBJ, NULL, NULL);
-    define_push(TOK___TIME__, MACRO_OBJ, NULL, NULL);
+    define_push(s, TOK___LINE__, MACRO_OBJ, NULL, NULL);
+    define_push(s, TOK___FILE__, MACRO_OBJ, NULL, NULL);
+    define_push(s, TOK___DATE__, MACRO_OBJ, NULL, NULL);
+    define_push(s, TOK___TIME__, MACRO_OBJ, NULL, NULL);
 
     /* define __TINYC__ 92X  */
     sscanf(TCC_VERSION, "%d.%d.%d", &a, &b, &c);
@@ -480,7 +449,7 @@ LIBTCCAPI TCCState *tcc_new(void)
 
 LIBTCCAPI void tcc_delete(TCCState *s1)
 {
-    tcc_cleanup();
+    tcc_cleanup(s1);
     
     /* free loaded dlls array */
     dynarray_reset(&s1->loaded_dlls, &s1->nb_loaded_dlls);
@@ -530,13 +499,13 @@ ST_FUNC int tcc_add_file_internal(TCCState *s1, const char *filename, int flags)
     ret = tcc_open(s1, filename);
     if (ret < 0) {
         if (flags & AFF_PRINT_ERROR)
-            tcc_error_noabort("file '%s' not found", filename);
+            tcc_error_noabort(s1, "file '%s' not found", filename);
         return ret;
     }
 
     /* update target deps */
     dynarray_add((void ***)&s1->target_deps, &s1->nb_target_deps,
-            tcc_strdup(filename));
+				 tcc_strdup(filename));
 
     if (flags & AFF_PREPROCESS) {
         ret = tcc_preprocess(s1);
@@ -545,10 +514,10 @@ ST_FUNC int tcc_add_file_internal(TCCState *s1, const char *filename, int flags)
 
     ret = -1;
     if (ret < 0)
-        tcc_error_noabort("unrecognized file type");
+        tcc_error_noabort(s1, "unrecognized file type");
 
 the_end:
-    tcc_close();
+    tcc_close(s1);
     return ret;
 }
 
@@ -765,7 +734,7 @@ int main(int argc, const char* argv[]) {
 	
     if (0 == ret) {
         if (s->output_type == TCC_OUTPUT_MEMORY) {
-            tcc_error_noabort("-run is not available");
+            tcc_error_noabort(s, "-run is not available");
             ret = 1;
         }
     }
