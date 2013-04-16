@@ -748,7 +748,6 @@ PUB_FUNC void *tcc_malloc(unsigned long size);
 PUB_FUNC void *tcc_mallocz(unsigned long size);
 PUB_FUNC void *tcc_realloc(void *ptr, unsigned long size);
 PUB_FUNC char *tcc_strdup(const char *str);
-PUB_FUNC void tcc_memstats(void);
 PUB_FUNC void tcc_error_noabort(TCCState *s1, const char *fmt, ...);
 PUB_FUNC void tcc_error(const char *fmt, ...);
 PUB_FUNC void tcc_warning(TCCState *s1, const char *fmt, ...);

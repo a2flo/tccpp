@@ -2847,9 +2847,8 @@ ST_FUNC int tcc_preprocess(TCCState *s1)
 {
     Sym *define_start;
 
-    BufferedFile *file_ref, **iptr, **iptr_new;
+    BufferedFile *file_ref;
     int token_seen, line_ref, d;
-    const char *s;
 
     preprocess_init(s1);
     define_start = s1->define_stack;
@@ -2859,7 +2858,6 @@ ST_FUNC int tcc_preprocess(TCCState *s1)
     token_seen = 0;
     line_ref = 0;
     file_ref = NULL;
-    iptr = s1->include_stack_ptr;
 
     for (;;) {
         next(s1);
@@ -2875,19 +2873,12 @@ ST_FUNC int tcc_preprocess(TCCState *s1)
         } else if (!token_seen && s1->file != NULL) {
             d = s1->file->line_num - line_ref;
             if (s1->file != file_ref || d < 0 || d >= 8) {
-print_line:
-                iptr_new = s1->include_stack_ptr;
-                s = iptr_new > iptr ? " 1"
-                  : iptr_new < iptr ? " 2"
-                  : iptr_new > s1->include_stack ? " 3"
-                  : ""
-                  ;
-                iptr = iptr_new;
-                //fprintf(s1->ppfp, "# %d \"%s\"%s\n", file->line_num, file->filename, s);
+                // nop
             } else {
                 while (d)
                     fputs("\n", s1->ppfp), --d;
             }
+print_line:
             line_ref = (file_ref = s1->file)->line_num;
             token_seen = s1->tok != TOK_LINEFEED;
             if (!token_seen)
@@ -2921,9 +2912,8 @@ ST_FUNC int tcc_in_memory_preprocess(TCCState *s1,
 	//
     Sym *define_start;
 	
-    BufferedFile *file_ref, **iptr, **iptr_new;
+    BufferedFile *file_ref;
     int token_seen, line_ref, d;
-    const char *s;
 	
     preprocess_init(s1);
     define_start = s1->define_stack;
@@ -2933,7 +2923,6 @@ ST_FUNC int tcc_in_memory_preprocess(TCCState *s1,
     token_seen = 0;
     line_ref = 0;
     file_ref = NULL;
-    iptr = s1->include_stack_ptr;
 	
     for (;;) {
         next(s1);
@@ -2949,20 +2938,14 @@ ST_FUNC int tcc_in_memory_preprocess(TCCState *s1,
         } else if (!token_seen && s1->file != NULL) {
             d = s1->file->line_num - line_ref;
             if (s1->file != file_ref || d < 0 || d >= 8) {
-			print_line:
-                iptr_new = s1->include_stack_ptr;
-                s = iptr_new > iptr ? " 1"
-				: iptr_new < iptr ? " 2"
-				: iptr_new > s1->include_stack ? " 3"
-				: ""
-				;
-                iptr = iptr_new;
+                // nop
             } else {
                 while (d) {
 					(*output_write_func)("\n", user_state);
                     --d;
 				}
             }
+print_line:
             line_ref = (file_ref = s1->file)->line_num;
             token_seen = s1->tok != TOK_LINEFEED;
             if (!token_seen) {

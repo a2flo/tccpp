@@ -106,8 +106,6 @@ PUB_FUNC void *tcc_realloc(void *ptr, unsigned long size)
 {
     void *ptr1;
     ptr1 = realloc(ptr, size);
-    if (!ptr1 && size)
-        tcc_error("memory full");
     return ptr1;
 }
 
@@ -119,16 +117,12 @@ PUB_FUNC char *tcc_strdup(const char *str)
     return ptr;
 }
 
-PUB_FUNC void tcc_memstats(void)
-{
-}
-
 /********************************************************/
 /* dynarrays */
 
 ST_FUNC void dynarray_add(void ***ptab, int *nb_ptr, void *data)
 {
-    int nb, nb_alloc;
+	int nb, nb_alloc;
     void **pp;
     
     nb = *nb_ptr;
@@ -142,8 +136,8 @@ ST_FUNC void dynarray_add(void ***ptab, int *nb_ptr, void *data)
         pp = tcc_realloc(pp, nb_alloc * sizeof(void *));
         *ptab = pp;
     }
-    pp[nb++] = data;
-    *nb_ptr = nb;
+	pp[nb] = data;
+	*nb_ptr = ++nb;
 }
 
 ST_FUNC void dynarray_reset(void *pp, int *n)

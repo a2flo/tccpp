@@ -368,12 +368,6 @@ static void gen_opic(TCCState *s1, int op)
                     n++;
                 }
                 s1->vtop->c.ll = n;
-                if (op == '*')
-                    op = TOK_SHL;
-                else if (op == TOK_PDIV)
-                    op = TOK_SAR;
-                else
-                    op = TOK_SHR;
             }
             goto general_case;
         } else if (c2 && (op == '+' || op == '-') &&
