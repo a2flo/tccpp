@@ -297,11 +297,11 @@ ST_FUNC char *get_tok_str(TCCState *s1, int v, CValue *cv)
         v = '>';
         goto addv;
     case TOK_DOTS:
-        return strcpy(p, "...");
+        return strlcpy(p, "...", 4);
     case TOK_A_SHL:
-        return strcpy(p, "<<=");
+        return strlcpy(p, "<<=", 4);
     case TOK_A_SAR:
-        return strcpy(p, ">>=");
+        return strlcpy(p, ">>=", 4);
     default:
         if (v < TOK_IDENT) {
             /* search in two bytes table */
@@ -1177,8 +1177,9 @@ static inline void add_cached_include(TCCState *s1, const char *filename, int if
 #ifdef INC_DEBUG
     printf("adding cached '%s' %s\n", filename, get_tok_str(ifndef_macro, NULL));
 #endif
-    e = tcc_malloc(sizeof(CachedInclude) + strlen(filename));
-    strcpy(e->filename, filename);
+	const size_t filename_size = strlen(filename);
+    e = tcc_malloc(sizeof(CachedInclude) + filename_size);
+    strlcpy(e->filename, filename, filename_size);
     e->ifndef_macro = ifndef_macro;
     dynarray_add((void ***)&s1->cached_includes, &s1->nb_cached_includes, e);
     /* add in hash table */

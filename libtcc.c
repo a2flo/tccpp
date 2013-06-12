@@ -112,8 +112,9 @@ PUB_FUNC void *tcc_realloc(void *ptr, unsigned long size)
 PUB_FUNC char *tcc_strdup(const char *str)
 {
     char *ptr;
-    ptr = tcc_malloc(strlen(str) + 1);
-    strcpy(ptr, str);
+	const size_t size = strlen(str) + 1;
+    ptr = tcc_malloc(size);
+	strlcpy(ptr, str, size);
     return ptr;
 }
 
