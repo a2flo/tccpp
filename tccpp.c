@@ -2910,8 +2910,7 @@ ST_FUNC int tcc_in_memory_preprocess(TCCState *s1,
 	s1->file->ifndef_macro = 0;
 	s1->file->ifndef_macro_saved = 0;
 	s1->file->ifdef_stack_ptr = s1->ifdef_stack_ptr;
-	s1->file->filename[0] = "M";
-	s1->file->filename[1] = 0;
+	strncpy(s1->file->filename, "in-memory\0", 10);
 	
 	//
     Sym *define_start;
