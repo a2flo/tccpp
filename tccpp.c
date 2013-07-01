@@ -297,11 +297,11 @@ ST_FUNC char *get_tok_str(TCCState *s1, int v, CValue *cv)
         v = '>';
         goto addv;
     case TOK_DOTS:
-        return strlcpy(p, "...", 4);
+        return strncpy(p, "...\0", 4);
     case TOK_A_SHL:
-        return strlcpy(p, "<<=", 4);
+        return strncpy(p, "<<=\0", 4);
     case TOK_A_SAR:
-        return strlcpy(p, ">>=", 4);
+        return strncpy(p, ">>=\0", 4);
     default:
         if (v < TOK_IDENT) {
             /* search in two bytes table */
