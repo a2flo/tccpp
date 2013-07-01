@@ -2894,11 +2894,14 @@ print_line:
 /* in-memory preprocess */
 ST_FUNC int tcc_in_memory_preprocess(TCCState *s1,
 									 const uint8_t* input_buf_ptr, const size_t input_length,
+									 const bool print_include_stack,
 									 void* user_state,
 									 void (*output_write_func)(const char* str, void* user_state))
 {
 	// file setup
     BufferedFile* bf = tcc_malloc(sizeof(BufferedFile));
+    BufferedFile** iptr = NULL;
+	BufferedFile** iptr_new = NULL;
 	s1->file = bf;
 	s1->file->buf_ptr = (uint8_t*)input_buf_ptr;
 	s1->file->buf_end = (uint8_t*)(input_buf_ptr + input_length);
@@ -2939,14 +2942,32 @@ ST_FUNC int tcc_in_memory_preprocess(TCCState *s1,
         } else if (!token_seen && s1->file != NULL) {
             d = s1->file->line_num - line_ref;
             if (s1->file != file_ref || d < 0 || d >= 8) {
-                // nop
+print_line:
+				if(print_include_stack) {
+					iptr_new = s1->include_stack_ptr;
+					const char* s = (iptr_new > iptr ? " 1"
+									 : iptr_new < iptr ? " 2"
+									 : iptr_new > s1->include_stack ? " 3"
+									 : "");
+					iptr = iptr_new;
+					
+#define INCLUDE_FILENAME_SIZE 1024
+					char includefile_name[INCLUDE_FILENAME_SIZE];
+					memset(includefile_name, 0, INCLUDE_FILENAME_SIZE);
+					snprintf(includefile_name, INCLUDE_FILENAME_SIZE-1,
+							 "# %d \"%s\"%s\n",
+							 s1->file->line_num, s1->file->filename, s);
+					(*output_write_func)(includefile_name, user_state);
+				}
+				else {
+					// nop
+				}
             } else {
                 while (d) {
 					(*output_write_func)("\n", user_state);
                     --d;
 				}
             }
-print_line:
             line_ref = (file_ref = s1->file)->line_num;
             token_seen = s1->tok != TOK_LINEFEED;
             if (!token_seen) {
