@@ -818,6 +818,7 @@ ST_FUNC void expect(const char *msg);
 ST_FUNC int tcc_in_memory_preprocess(TCCState *s1,
 									 const uint8_t* input_buf_ptr, const size_t input_length,
 									 const bool print_include_stack,
+									 const char* memory_filename,
 									 void* user_state,
 									 void (*output_write_func)(const char* str, void* user_state));
 

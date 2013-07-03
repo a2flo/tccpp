@@ -2895,6 +2895,7 @@ print_line:
 ST_FUNC int tcc_in_memory_preprocess(TCCState *s1,
 									 const uint8_t* input_buf_ptr, const size_t input_length,
 									 const bool print_include_stack,
+									 const char* memory_filename,
 									 void* user_state,
 									 void (*output_write_func)(const char* str, void* user_state))
 {
@@ -2910,7 +2911,17 @@ ST_FUNC int tcc_in_memory_preprocess(TCCState *s1,
 	s1->file->ifndef_macro = 0;
 	s1->file->ifndef_macro_saved = 0;
 	s1->file->ifdef_stack_ptr = s1->ifdef_stack_ptr;
-	strncpy(s1->file->filename, "in-memory\0", 10);
+	
+	if(memory_filename == NULL) {
+		strncpy(s1->file->filename, "in-memory\0", 10);
+	}
+	else {
+		const size_t mem_len = sizeof(bf->filename) - 1;
+		const size_t str_len = strlen(memory_filename);
+		const size_t copy_len = (str_len < mem_len ? str_len : mem_len); // note: max: 1023
+		memcpy(s1->file->filename, memory_filename, copy_len);
+		s1->file->filename[copy_len] = 0; // 0-terminate
+	}
 	
 	//
     Sym *define_start;
