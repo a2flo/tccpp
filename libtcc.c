@@ -114,7 +114,7 @@ PUB_FUNC char *tcc_strdup(const char *str)
     char *ptr;
 	const size_t size = strlen(str) + 1;
     ptr = tcc_malloc(size);
-	strlcpy(ptr, str, size);
+	strncpy(ptr, str, size);
     return ptr;
 }
 

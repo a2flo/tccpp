@@ -1179,7 +1179,7 @@ static inline void add_cached_include(TCCState *s1, const char *filename, int if
 #endif
 	const size_t filename_size = strlen(filename);
     e = tcc_malloc(sizeof(CachedInclude) + filename_size);
-    strlcpy(e->filename, filename, filename_size);
+    strncpy(e->filename, filename, filename_size);
     e->ifndef_macro = ifndef_macro;
     dynarray_add((void ***)&s1->cached_includes, &s1->nb_cached_includes, e);
     /* add in hash table */
