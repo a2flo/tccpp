@@ -32,16 +32,16 @@ Note: even though this project can still be compiled and used as a standalone bi
     tcc_parse_args(state, argc, argv);
     // in-memory preprocessing
     const uint8_t* code_input = (const uint8_t*)raw_code.c_str();
-    tcc_in_memory_preprocess(// the just created tcc state object - thanks to this, tccpp is multi-
-                             // threading capable, i.e. you can create a TCCState object for each
-                             // thread and then call tcc_in_memory_preprocess from each thread with
-                             // their resp. state object
+    tcc_in_memory_preprocess(// the just created tcc state object - thanks to this, tccpp is
+                             // multi-threading capable, i.e. you can create a TCCState object for
+                             // each thread and then call tcc_in_memory_preprocess from each
+                             // thread with their resp. state object
                              state,
                              // code input string + length
                              code_input, raw_code.length(),
                              // whether to print/add the include stack or not
                              true,
-                             // the filename that should be used for this in-memory code (raw_code)
+                             // the filename that should be used for this in-memory code
                              // - probably only useful when include stack printing is enabled
                              "in_memory_file.c",
                              // preprocessed output (manual string concat)
