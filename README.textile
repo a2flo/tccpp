@@ -33,9 +33,9 @@ Note: even though this project can still be compiled and used as a standalone bi
     // in-memory preprocessing
     const uint8_t* code_input = (const uint8_t*)raw_code.c_str();
     tcc_in_memory_preprocess(// the just created tcc state object - thanks to this, tccpp is multi-
-							 // threading capable, i.e. you can create a TCCState object for each
-							 // thread and then call tcc_in_memory_preprocess from each thread with
-							 // their resp. state object
+                             // threading capable, i.e. you can create a TCCState object for each
+                             // thread and then call tcc_in_memory_preprocess from each thread with
+                             // their resp. state object
                              state,
                              // code input string + length
                              code_input, raw_code.length(),
