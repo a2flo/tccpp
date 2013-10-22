@@ -454,12 +454,6 @@ static inline int is_null_pointer(SValue *p)
 	((p->type.t & VT_BTYPE) == VT_PTR && p->c.ptr == 0);
 }
 
-static inline int is_integer_btype(int bt)
-{
-    return (bt == VT_BYTE || bt == VT_SHORT || 
-            bt == VT_INT || bt == VT_LLONG);
-}
-
 /* generic gen_op: handles types problems */
 ST_FUNC void gen_op(TCCState *s1, int op)
 {
@@ -810,20 +804,6 @@ ST_FUNC void inc(TCCState *s1, int post, int c)
     vstore(s1); /* store value */
     if (post)
         vpop(s1); /* if post op, return saved value */
-}
-
-/* convert a function parameter type (array to pointer and function to
-   function pointer) */
-static inline void convert_parameter_type(CType *pt)
-{
-    /* remove const and volatile qualifiers (XXX: const could be used
-       to indicate a const function parameter */
-    pt->t &= ~(VT_CONSTANT | VT_VOLATILE);
-    /* array must be transformed to pointer according to ANSI C */
-    pt->t &= ~VT_ARRAY;
-    if ((pt->t & VT_BTYPE) == VT_FUNC) {
-        mk_pointer(pt);
-    }
 }
 
 /* compute the lvalue VT_LVAL_xxx needed to match type t. */
