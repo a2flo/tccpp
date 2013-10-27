@@ -29,19 +29,17 @@ fi
 case $( uname | tr [:upper:] [:lower:] ) in
 	"darwin")
 		BUILD_OS="macosx"
-		BUILD_CPU_COUNT=$(sysctl -a | grep 'machdep.cpu.thread_count' | sed -E 's/.*(: )([:digit:]*)/\2/g')
+		BUILD_CPU_COUNT=$(sysctl -n hw.ncpu)
 		;;
 	"linux")
 		BUILD_OS="linux"
-		BUILD_CPU_COUNT=$(cat /proc/cpuinfo | grep -m 1 'cpu cores' | sed -E 's/.*(: )([:digit:]*)/\2/g')
-		if [[ $(cat /proc/cpuinfo | grep -m 1 "flags.* ht " | wc -l) == 1 ]]; then
-			BUILD_CPU_COUNT=$(expr ${BUILD_CPU_COUNT} + ${BUILD_CPU_COUNT})
-		fi 
+		# note that this includes hyper-threading and multi-socket systems
+		BUILD_CPU_COUNT=$(cat /proc/cpuinfo | grep "processor" | wc -l)
 		;;
 	[a-z0-9]*"BSD")
 		BUILD_OS="bsd"
 		BUILD_MAKE="gmake"
-		# TODO: get cpu/thread count on *bsd
+		BUILD_CPU_COUNT=$(sysctl -n hw.ncpu)
 		;;
 	"cygwin"*)
 		BUILD_OS="windows"
