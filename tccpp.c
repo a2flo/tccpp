@@ -84,19 +84,19 @@ ST_FUNC void expect(const char *msg)
 
 /* ------------------------------------------------------------------------- */
 /* CString handling */
-static void cstr_realloc(CString *cstr, int new_size)
+static void cstr_realloc(CString *cstr, size_t new_size)
 {
-    int size;
+    size_t size;
     void *data;
 
-    size = cstr->size_allocated;
+    size = (size_t)cstr->size_allocated;
     if (size == 0)
         size = 8; /* no need to allocate a too small first string */
     while (size < new_size)
         size = size * 2;
     data = tcc_realloc(cstr->data_allocated, size);
     cstr->data_allocated = data;
-    cstr->size_allocated = size;
+    cstr->size_allocated = (int)size;
     cstr->data = data;
 }
 
@@ -106,8 +106,8 @@ ST_FUNC void cstr_ccat(CString *cstr, int ch_)
     int size;
     size = cstr->size + 1;
     if (size > cstr->size_allocated)
-        cstr_realloc(cstr, size);
-    ((unsigned char *)cstr->data)[size - 1] = ch_;
+        cstr_realloc(cstr, (size_t)size);
+    ((unsigned char *)cstr->data)[size - 1] = (unsigned char)ch_;
     cstr->size = size;
 }
 
@@ -127,9 +127,9 @@ ST_FUNC void cstr_cat(CString *cstr, const char *str)
 ST_FUNC void cstr_wccat(CString *cstr, int ch_)
 {
     int size;
-    size = cstr->size + sizeof(nwchar_t);
+    size = (int)((size_t)cstr->size + sizeof(nwchar_t));
     if (size > cstr->size_allocated)
-        cstr_realloc(cstr, size);
+        cstr_realloc(cstr, (size_t)size);
     *(nwchar_t *)(((unsigned char *)cstr->data) + size - sizeof(nwchar_t)) = ch_;
     cstr->size = size;
 }
@@ -186,11 +186,11 @@ static TokenSym *tok_alloc_new(TCCState *s1, TokenSym **pts, const char *str, in
     /* expand token table if needed */
     i = s1->tok_ident - TOK_IDENT;
     if ((i % TOK_ALLOC_INCR) == 0) {
-        ptable = tcc_realloc(s1->table_ident, (i + TOK_ALLOC_INCR) * sizeof(TokenSym *));
+        ptable = tcc_realloc(s1->table_ident, (size_t)(i + TOK_ALLOC_INCR) * sizeof(TokenSym *));
         s1->table_ident = ptable;
     }
 
-    ts = tcc_malloc(sizeof(TokenSym) + len);
+    ts = tcc_malloc(sizeof(TokenSym) + (size_t)len);
     s1->table_ident[i] = ts;
     ts->tok = s1->tok_ident++;
     ts->sym_define = NULL;
@@ -225,7 +225,7 @@ ST_FUNC TokenSym *tok_alloc(TCCState *s1, const char *str, int len)
         ts = *pts;
         if (!ts)
             break;
-        if (ts->len == len && !memcmp(ts->str, str, len))
+        if (ts->len == len && !memcmp(ts->str, str, (size_t)len))
             return ts;
         pts = &(ts->hash_next);
     }
@@ -283,7 +283,7 @@ ST_FUNC char *get_tok_str(TCCState *s1, int v, CValue *cv)
             for(i=0;i<len;i++)
                 add_char(&cstr_buf, ((unsigned char *)cstr->data)[i]);
         } else {
-            len = (cstr->size / sizeof(nwchar_t)) - 1;
+            len = (int)((size_t)cstr->size / sizeof(nwchar_t)) - 1;
             for(i=0;i<len;i++)
                 add_char(&cstr_buf, ((nwchar_t *)cstr->data)[i]);
         }
@@ -308,15 +308,15 @@ ST_FUNC char *get_tok_str(TCCState *s1, int v, CValue *cv)
             const unsigned char *q = tok_two_chars;
             while (*q) {
                 if (q[2] == v) {
-                    *p++ = q[0];
-                    *p++ = q[1];
+                    *p++ = (char)q[0];
+                    *p++ = (char)q[1];
                     *p = '\0';
                     return s1->buf;
                 }
                 q += 3;
             }
         addv:
-            *p++ = v;
+            *p++ = (char)v;
             *p = '\0';
         } else if (v < s1->tok_ident) {
             return s1->table_ident[v - TOK_IDENT]->str;
@@ -344,7 +344,7 @@ static int tcc_peekc_slow(BufferedFile *bf)
 #else
             len = IO_BUF_SIZE;
 #endif
-            len = (int)read(bf->fd, bf->buffer, len);
+            len = (int)read(bf->fd, bf->buffer, (size_t)len);
             if (len < 0)
                 len = 0;
         } else {
@@ -824,7 +824,7 @@ static int *tok_str_realloc(TokenString *s)
     } else {
         len = s->allocated_len * 2;
     }
-    str = tcc_realloc(s->str, len * sizeof(int));
+    str = tcc_realloc(s->str, (size_t)len * sizeof(int));
     s->allocated_len = len;
     s->str = str;
     return str;
@@ -869,7 +869,7 @@ static void tok_str_add2(TokenString *s, int t, CValue *cv)
             int nb_words;
             CString *cstr;
 
-            nb_words = (sizeof(CString) + cv->cstr->size + 3) >> 2;
+            nb_words = (int)((sizeof(CString) + (size_t)cv->cstr->size + (size_t)3) >> (size_t)2);
             while ((len + nb_words) > s->allocated_len)
                 str = tok_str_realloc(s);
             cstr = (CString *)(str + len);
@@ -930,7 +930,7 @@ static inline void TOK_GET(int *t, const int **pp, CValue *cv)
     case TOK_PPNUM:
         cv->cstr = (CString *)p;
         cv->cstr->data = (char *)p + sizeof(CString);
-        p += (sizeof(CString) + cv->cstr->size + 3) >> 2;
+        p += ((sizeof(CString) + (size_t)cv->cstr->size + (size_t)3) >> (size_t)2);
         break;
     case TOK_CDOUBLE:
     case TOK_CLLONG:
@@ -1147,7 +1147,7 @@ static inline int hash_cached_include(const char *filename)
         s++;
     }
     h &= (CACHED_INCLUDES_HASH_SIZE - 1);
-    return h;
+    return (int)h;
 }
 
 static CachedInclude *search_cached_include(TCCState *s1, const char *filename)
@@ -1230,7 +1230,7 @@ ST_FUNC void preprocess(TCCState *s1, int is_bof)
             q = buf;
             while (s1->ch != c && s1->ch != '\n' && s1->ch != CH_EOF) {
                 if ((q - buf) < (long)sizeof(buf) - 1)
-                    *q++ = s1->ch;
+                    *q++ = (char)s1->ch;
                 if (s1->ch == '\\') {
                     if (handle_stray_noerror(s1) == 0)
                         --q;
@@ -1293,7 +1293,7 @@ ST_FUNC void preprocess(TCCState *s1, int is_bof)
                 if (c != '\"')
                     continue;
                 path = s1->file->filename;
-                pstrncpy(buf1, path, tcc_basename(path) - path);
+                pstrncpy(buf1, path, (size_t)(tcc_basename(path) - path));
 
             } else {
                 /* search in all the include paths */
@@ -1429,7 +1429,7 @@ include_done:
         q = buf;
         while (s1->ch != '\n' && s1->ch != CH_EOF) {
             if ((q - buf) < (long)sizeof(buf) - 1)
-                *q++ = s1->ch;
+                *q++ = (char)s1->ch;
             if (s1->ch == '\\') {
                 if (handle_stray_noerror(s1) == 0)
                     --q;
@@ -1575,7 +1575,7 @@ static void parse_escape_string(CString *outstr, const uint8_t *buf, int is_long
 #define BN_SIZE 2
 
 /* bn = (bn << shift) | or_val */
-static void bn_lshift(unsigned int *bn, int shift, int or_val)
+static void bn_lshift(unsigned int *bn, unsigned int shift, unsigned int or_val)
 {
     int i;
     unsigned int v;
@@ -1608,7 +1608,7 @@ static void parse_number(TCCState *s1, const char *p)
     ch_ = *p++;
     t = ch_;
     ch_ = *p++;
-    *q++ = t;
+    *q++ = (char)t;
     b = 10;
     if (t == '.') {
         goto float_frac_parse;
@@ -1636,7 +1636,7 @@ static void parse_number(TCCState *s1, const char *p)
         num_too_long:
             tcc_error("number too long");
         }
-        *q++ = ch_;
+        *q++ = (char)ch_;
         ch_ = *p++;
     }
     if (ch_ == '.' ||
@@ -1666,7 +1666,7 @@ static void parse_number(TCCState *s1, const char *p)
                 } else {
                     t = t - '0';
                 }
-                bn_lshift(bn, shift, t);
+                bn_lshift(bn, (unsigned int)shift, (unsigned int)t);
             }
             frac_bits = 0;
             if (ch_ == '.') {
@@ -1684,7 +1684,7 @@ static void parse_number(TCCState *s1, const char *p)
                     }
                     if (t >= b)
                         tcc_error("invalid digit");
-                    bn_lshift(bn, shift, t);
+                    bn_lshift(bn, (unsigned int)shift, (unsigned int)t);
                     frac_bits += shift;
                     ch_ = *p++;
                 }
@@ -1727,25 +1727,25 @@ static void parse_number(TCCState *s1, const char *p)
             if (ch_ == '.') {
                 if (q >= s1->token_buf + STRING_MAX_SIZE)
                     goto num_too_long;
-                *q++ = ch_;
+                *q++ = (char)ch_;
                 ch_ = *p++;
             float_frac_parse:
                 while (ch_ >= '0' && ch_ <= '9') {
                     if (q >= s1->token_buf + STRING_MAX_SIZE)
                         goto num_too_long;
-                    *q++ = ch_;
+                    *q++ = (char)ch_;
                     ch_ = *p++;
                 }
             }
             if (ch_ == 'e' || ch_ == 'E') {
                 if (q >= s1->token_buf + STRING_MAX_SIZE)
                     goto num_too_long;
-                *q++ = ch_;
+                *q++ = (char)ch_;
                 ch_ = *p++;
                 if (ch_ == '-' || ch_ == '+') {
                     if (q >= s1->token_buf + STRING_MAX_SIZE)
                         goto num_too_long;
-                    *q++ = ch_;
+                    *q++ = (char)ch_;
                     ch_ = *p++;
                 }
                 if (ch_ < '0' || ch_ > '9')
@@ -1753,7 +1753,7 @@ static void parse_number(TCCState *s1, const char *p)
                 while (ch_ >= '0' && ch_ <= '9') {
                     if (q >= s1->token_buf + STRING_MAX_SIZE)
                         goto num_too_long;
-                    *q++ = ch_;
+                    *q++ = (char)ch_;
                     ch_ = *p++;
                 }
             }
@@ -1796,7 +1796,7 @@ static void parse_number(TCCState *s1, const char *p)
                     tcc_error("invalid digit");
             }
             n1 = n;
-            n = n * b + t;
+            n = n * (unsigned long long int)b + (unsigned long long int)t;
             /* detect overflow */
             /* XXX: this test is not reliable */
             if (n < n1)
@@ -1992,13 +1992,13 @@ maybe_newline:
     parse_ident_fast:
         p1 = p;
         h = TOK_HASH_INIT;
-        h = TOK_HASH_FUNC(h, c);
+        h = TOK_HASH_FUNC(h, (unsigned int)c);
         p++;
         for(;;) {
             c = *p;
             if (!s1->isidnum_table[c-CH_EOF])
                 break;
-            h = TOK_HASH_FUNC(h, c);
+            h = TOK_HASH_FUNC(h, (unsigned int)c);
             p++;
         }
         if (c != '\\') {
@@ -2014,7 +2014,7 @@ maybe_newline:
                 ts = *pts;
                 if (!ts)
                     break;
-                if (ts->len == len && !memcmp(ts->str, p1, len))
+                if (ts->len == len && !memcmp(ts->str, p1, (size_t)len))
                     goto token_found;
                 pts = &(ts->hash_next);
             }

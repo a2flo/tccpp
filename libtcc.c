@@ -38,7 +38,7 @@ PUB_FUNC char *pstrcpy(char *buf, int buf_size, const char *s)
             c = *s++;
             if (c == '\0')
                 break;
-            *q++ = c;
+            *q++ = (char)c;
         }
         *q = '\0';
     }
@@ -134,7 +134,7 @@ ST_FUNC void dynarray_add(void ***ptab, int *nb_ptr, void *data)
             nb_alloc = 1;
         else
             nb_alloc = nb * 2;
-        pp = tcc_realloc(pp, nb_alloc * sizeof(void *));
+        pp = tcc_realloc(pp, (size_t)nb_alloc * sizeof(void *));
         *ptab = pp;
     }
 	pp[nb] = data;
@@ -295,7 +295,7 @@ ST_FUNC void tcc_open_bf(TCCState *s1, const char *filename, int initlen)
     BufferedFile *bf;
     int buflen = initlen ? initlen : IO_BUF_SIZE;
 
-    bf = tcc_malloc(sizeof(BufferedFile) + buflen);
+    bf = tcc_malloc(sizeof(BufferedFile) + (size_t)buflen);
     bf->buf_ptr = bf->buffer;
     bf->buf_end = bf->buffer + initlen;
     bf->buf_end[0] = CH_EOB; /* put eob symbol */
@@ -638,8 +638,9 @@ LIBTCCAPI int tcc_set_options(TCCState *s, const char *str)
     const char *s1;
     const char **argv;
 	char *arg;
-    int argc, len;
+    int argc;
     int ret;
+	size_t len;
 
     argc = 0, argv = NULL;
     for(;;) {
@@ -650,8 +651,8 @@ LIBTCCAPI int tcc_set_options(TCCState *s, const char *str)
         s1 = str;
         while (*str != '\0' && !is_space(*str))
             str++;
-        len = (int)(str - s1);
-        arg = tcc_malloc(len + 1);
+        len = (size_t)(str - s1);
+        arg = tcc_malloc((len + 1));
         pstrncpy(arg, s1, len);
         dynarray_add((void ***)&argv, &argc, arg);
     }

@@ -55,13 +55,13 @@ solution "tccpp"
 		end
 		add_include("/usr/local/include")
 		buildoptions { "-Wall -std=c11" }
-		
+
 		if(clang_libcxx) then
 			buildoptions { "-Weverything" }
 			buildoptions { "-Wno-unknown-warning-option" }
-			buildoptions { "-Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-header-hygiene -Wno-gnu -Wno-float-equal" }
+			buildoptions { "-Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-header-hygiene -Wno-gnu" }
 			buildoptions { "-Wno-documentation -Wno-system-headers -Wno-global-constructors -Wno-padded -Wno-packed" }
-			buildoptions { "-Wno-switch-enum -Wno-sign-conversion -Wno-conversion -Wno-exit-time-destructors" }
+			buildoptions { "-Wno-switch-enum -Wno-exit-time-destructors" }
 			linkoptions { "-fvisibility=default" }
 		end
 		

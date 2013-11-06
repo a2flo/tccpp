@@ -37,8 +37,8 @@ ST_INLN int is_float(int t)
 /* XXX: endianness dependent */
 ST_FUNC int ieee_finite(double d)
 {
-    int *p = (int *)&d;
-    return ((unsigned)((p[1] | 0x800fffff) + 1)) >> 31;
+    unsigned int *p = (unsigned int *)&d;
+    return ((unsigned)((p[1] | 0x800fffff) + 1u)) >> 31u;
 }
 
 ST_FUNC void test_lvalue(TCCState *s1)
@@ -133,7 +133,7 @@ static void vsetc(TCCState *s1, CType *type, int r, CValue *vc)
         tcc_error("memory full");
     s1->vtop++;
     s1->vtop->type = *type;
-    s1->vtop->r = r;
+    s1->vtop->r = (unsigned short)r;
     s1->vtop->r2 = VT_CONST;
     s1->vtop->c = *vc;
 }
@@ -167,7 +167,7 @@ void vpush64(TCCState *s1, int ty, unsigned long long v)
 /* push long long constant */
 static inline void vpushll(TCCState *s1, long long v)
 {
-    vpush64(s1, VT_LLONG, v);
+    vpush64(s1, VT_LLONG, (unsigned long long int)v);
 }
 
 ST_FUNC void vset(TCCState *s1, CType *type, int r, int v)
@@ -314,12 +314,12 @@ static void gen_opic(TCCState *s1, int op)
             switch(op) {
             default: l1 /= l2; break;
             case '%': l1 %= l2; break;
-            case TOK_UDIV: l1 = (U)l1 / l2; break;
-            case TOK_UMOD: l1 = (U)l1 % l2; break;
+            case TOK_UDIV: l1 = (long long int)((U)l1 / (U)l2); break;
+            case TOK_UMOD: l1 = (long long int)((U)l1 % (U)l2); break;
             }
             break;
         case TOK_SHL: l1 <<= l2; break;
-        case TOK_SHR: l1 = (U)l1 >> l2; break;
+        case TOK_SHR: l1 = (long long int)((U)l1 >> (U)l2); break;
         case TOK_SAR: l1 >>= l2; break;
             /* tests */
         case TOK_ULT: l1 = (U)l1 < (U)l2; break;
@@ -411,7 +411,7 @@ static void gen_opif(TCCState *s1, int op)
 
         /* NOTE: we only do constant propagation if finite number (not
            NaN or infinity) (ANSI spec) */
-        if (!ieee_finite(f1) || !ieee_finite(f2))
+        if (!ieee_finite((double)f1) || !ieee_finite((double)f2))
             goto general_case;
 
         switch(op) {
@@ -432,9 +432,9 @@ static void gen_opif(TCCState *s1, int op)
         }
         /* XXX: overflow test ? */
         if (v1->type.t == VT_FLOAT) {
-            v1->c.f = f1;
+            v1->c.f = (float)f1;
         } else if (v1->type.t == VT_DOUBLE) {
-            v1->c.d = f1;
+            v1->c.d = (double)f1;
         } else {
             v1->c.ld = f1;
         }
@@ -656,19 +656,19 @@ static void gen_cast(TCCState *s1, CType *type)
             } else if (sf && dbt == (VT_LLONG|VT_UNSIGNED)) {
                 s1->vtop->c.ull = (unsigned long long)s1->vtop->c.ld;
             } else if (sf && dbt == VT_BOOL) {
-                s1->vtop->c.i = (s1->vtop->c.ld != 0);
+                s1->vtop->c.i = ((int)s1->vtop->c.ld != 0);
             } else {
                 if(sf)
                     s1->vtop->c.ll = (long long)s1->vtop->c.ld;
                 else if (sbt == (VT_LLONG|VT_UNSIGNED))
-                    s1->vtop->c.ll = s1->vtop->c.ull;
+                    s1->vtop->c.ll = (long long int)s1->vtop->c.ull;
                 else if (sbt & VT_UNSIGNED)
                     s1->vtop->c.ll = s1->vtop->c.ui;
                 else if (sbt != VT_LLONG)
                     s1->vtop->c.ll = s1->vtop->c.i;
 
                 if (dbt == (VT_LLONG|VT_UNSIGNED))
-                    s1->vtop->c.ull = s1->vtop->c.ll;
+                    s1->vtop->c.ull = (unsigned long long int)s1->vtop->c.ll;
                 else if (dbt == VT_BOOL)
                     s1->vtop->c.i = (s1->vtop->c.ll != 0);
                 else if (dbt != VT_LLONG) {
@@ -759,7 +759,7 @@ ST_FUNC void vstore(TCCState *s1)
         /* mask and shift source */
         if((ft & VT_BTYPE) != VT_BOOL) {
             if((ft & VT_BTYPE) == VT_LLONG) {
-                vpushll(s1, (1ULL << bit_size) - 1ULL);
+                vpushll(s1, (long long int)((1ULL << bit_size) - 1ULL));
             } else {
                 vpushi(s1, (1 << bit_size) - 1);
             }
@@ -770,7 +770,7 @@ ST_FUNC void vstore(TCCState *s1)
         /* load destination, mask and or with source */
         vswap(s1);
         if((ft & VT_BTYPE) == VT_LLONG) {
-            vpushll(s1, ~(((1ULL << bit_size) - 1ULL) << bit_pos));
+            vpushll(s1, (long long int)~(((1ULL << bit_size) - 1ULL) << bit_pos));
         } else {
             vpushi(s1, ~(((1 << bit_size) - 1) << bit_pos));
         }

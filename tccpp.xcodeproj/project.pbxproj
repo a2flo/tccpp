@@ -142,10 +142,13 @@
 				CLANG_ANALYZER_SECURITY_INSECUREAPI_STRCPY = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_IMPLICIT_SIGN_CONVERSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_SUSPICIOUS_IMPLICIT_CONVERSION = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CONFIGURATION_BUILD_DIR = "build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
 				COPY_PHASE_STRIP = NO;
@@ -158,10 +161,15 @@
 					"$(inherited)",
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_MISSING_FIELD_INITIALIZERS = YES;
+				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
 				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_FOUR_CHARACTER_CONSTANTS = YES;
+				GCC_WARN_INITIALIZER_NOT_FULLY_BRACKETED = YES;
 				GCC_WARN_SHADOW = YES;
+				GCC_WARN_SIGN_COMPARE = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNKNOWN_PRAGMAS = YES;
 				GCC_WARN_UNUSED_FUNCTION = YES;
@@ -175,35 +183,18 @@
 					"-Weverything",
 					"-Wno-c++98-compat",
 					"-Wno-c++98-compat-pedantic",
+					"-Wno-c99-extensions",
 					"-Wno-header-hygiene",
 					"-Wno-gnu",
-					"-Wno-float-equal",
 					"-Wno-documentation",
 					"-Wno-system-headers",
 					"-Wno-global-constructors",
 					"-Wno-padded",
 					"-Wno-packed",
 					"-Wno-switch-enum",
-					"-Wno-sign-conversion",
-					"-Wno-conversion",
 					"-Wno-exit-time-destructors",
 					"-Wno-unknown-warning-option",
-					"-Wmissing-field-initializers",
-					"-Wmissing-prototypes",
-					"-Wreturn-type",
-					"-Woverloaded-virtual",
-					"-Wmissing-braces",
-					"-Wunused-function",
-					"-Wunused-label",
-					"-Wunused-variable",
-					"-Wuninitialized",
-					"-Wunknown-pragmas",
-					"-Wfour-char-constants",
-					"-Wshorten-64-to-32",
-					"-Wnewline-eof",
-					"-Wnon-virtual-dtor",
 					"-Wno-nested-anon-types",
-					"-Wmissing-variable-declarations",
 				);
 			};
 			name = Debug;
@@ -217,20 +208,28 @@
 				CLANG_ANALYZER_SECURITY_INSECUREAPI_STRCPY = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_IMPLICIT_SIGN_CONVERSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_SUSPICIOUS_IMPLICIT_CONVERSION = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CONFIGURATION_BUILD_DIR = "build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GCC_C_LANGUAGE_STANDARD = c11;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_MISSING_FIELD_INITIALIZERS = YES;
+				GCC_WARN_ABOUT_MISSING_NEWLINE = YES;
 				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_FOUR_CHARACTER_CONSTANTS = YES;
+				GCC_WARN_INITIALIZER_NOT_FULLY_BRACKETED = YES;
 				GCC_WARN_SHADOW = YES;
+				GCC_WARN_SIGN_COMPARE = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNKNOWN_PRAGMAS = YES;
 				GCC_WARN_UNUSED_FUNCTION = YES;
@@ -243,35 +242,18 @@
 					"-Weverything",
 					"-Wno-c++98-compat",
 					"-Wno-c++98-compat-pedantic",
+					"-Wno-c99-extensions",
 					"-Wno-header-hygiene",
 					"-Wno-gnu",
-					"-Wno-float-equal",
 					"-Wno-documentation",
 					"-Wno-system-headers",
 					"-Wno-global-constructors",
 					"-Wno-padded",
 					"-Wno-packed",
 					"-Wno-switch-enum",
-					"-Wno-sign-conversion",
-					"-Wno-conversion",
 					"-Wno-exit-time-destructors",
 					"-Wno-unknown-warning-option",
-					"-Wmissing-field-initializers",
-					"-Wmissing-prototypes",
-					"-Wreturn-type",
-					"-Woverloaded-virtual",
-					"-Wmissing-braces",
-					"-Wunused-function",
-					"-Wunused-label",
-					"-Wunused-variable",
-					"-Wuninitialized",
-					"-Wunknown-pragmas",
-					"-Wfour-char-constants",
-					"-Wshorten-64-to-32",
-					"-Wnewline-eof",
-					"-Wnon-virtual-dtor",
 					"-Wno-nested-anon-types",
-					"-Wmissing-variable-declarations",
 				);
 			};
 			name = Release;
