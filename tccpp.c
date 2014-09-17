@@ -199,7 +199,7 @@ static TokenSym *tok_alloc_new(TCCState *s1, TokenSym **pts, const char *str, in
     ts->sym_identifier = NULL;
     ts->len = len;
     ts->hash_next = NULL;
-    memcpy(ts->str, str, len);
+    memcpy(ts->str, str, (size_t)len);
     ts->str[len] = '\0';
     *pts = ts;
     return ts;
@@ -878,7 +878,7 @@ static void tok_str_add2(TokenString *s, int t, CValue *cv)
             cstr->data_allocated = NULL;
             cstr->size_allocated = cstr->size;
             memcpy((char *)cstr + sizeof(CString), 
-                   cv->cstr->data, cstr->size);
+                   cv->cstr->data, (size_t)cstr->size);
             len += nb_words;
         }
         break;
@@ -1264,7 +1264,7 @@ ST_FUNC void preprocess(TCCState *s1, int is_bof)
                 /* check syntax and remove '<>' */
                 if (len < 2 || buf[0] != '<' || buf[len - 1] != '>')
                     goto include_syntax;
-                memmove(buf, buf + 1, len - 2);
+                memmove(buf, buf + 1, (size_t)(len - 2));
                 buf[len - 2] = '\0';
                 c = '>';
             }
@@ -2624,7 +2624,7 @@ static inline int *macro_twosharps(TCCState *s1, const int *macro_str)
                 cstr_ccat(&cstr, '\0');
 
                 tcc_open_bf(s1, ":paste:", cstr.size); // TODO: !
-                memcpy(s1->file->buffer, cstr.data, cstr.size);
+                memcpy(s1->file->buffer, cstr.data, (size_t)cstr.size);
                 for (;;) {
                     next_nomacro1(s1);
                     if (0 == *s1->file->buf_ptr)

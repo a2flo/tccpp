@@ -184,7 +184,7 @@ static void strcat_vprintf(char *buf, int buf_size, const char *fmt, va_list ap)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wformat-nonliteral"
 #endif
-    vsnprintf(buf + len, buf_size - len, fmt, ap);
+    vsnprintf(buf + len, (size_t)(buf_size - len), fmt, ap);
 #if defined(__clang__)
 #pragma clang diagnostic pop
 #endif
@@ -348,9 +348,9 @@ LIBTCCAPI void tcc_define_symbol(TCCState *s1, const char *sym, const char *valu
 
     /* init file structure */
     tcc_open_bf(s1, "<define>", len1 + len2 + 1);
-    memcpy(s1->file->buffer, sym, len1);
+    memcpy(s1->file->buffer, sym, (size_t)len1);
     s1->file->buffer[len1] = ' ';
-    memcpy(s1->file->buffer + len1 + 1, value, len2);
+    memcpy(s1->file->buffer + len1 + 1, value, (size_t)len2);
 
     /* parse with define parser */
     s1->ch = s1->file->buf_ptr[0];
